@@ -63,6 +63,26 @@ public class UpdateHandler
             return;
         }
 
+        var commandText = text.Trim();
+
+        if (commandText == "/start")
+        {
+            SendStart(chatId);
+            return;
+        }
+
+        if (commandText == "/help")
+        {
+            SendHelp(chatId);
+            return;
+        }
+
+        if (commandText == "/info")
+        {
+            SendInfo(chatId);
+            return;
+        }
+
         var user = _userRepository.GetByTelegramChatId(chatId);
         if (user is null)
         {
@@ -70,13 +90,7 @@ public class UpdateHandler
             return;
         }
 
-        var commandText = text.Trim();
-
-        if (commandText == "/help")
-        {
-            SendHelp(chatId);
-        }
-        else if (commandText == "/report")
+        if (commandText == "/report")
         {
             SendReport(chatId, user);
         }
@@ -143,28 +157,61 @@ public class UpdateHandler
     }
 
     /// <summary>
+    /// Отправляет приветственное сообщение.
+    /// </summary>
+    private void SendStart(long chatId)
+    {
+        Send(chatId, "Бот отчетности сотрудников запущен. Введите /help для просмотра команд.");
+    }
+
+    /// <summary>
     /// Отправляет список доступных команд.
     /// </summary>
     private void SendHelp(long chatId)
     {
         Send(chatId,
+            "Справка по командам\n\n" +
+            "Общие команды:\n" +
+            "/start - начать работу с ботом.\n" +
+            "/help - показать подробную справку.\n" +
+            "/info - описание программы и версия.\n\n" +
             "Команды сотрудника:\n" +
-            "/report\n" +
-            "/task текст выполненной задачи\n" +
-            "/block текст проблемы\n" +
-            "/my_last_report\n" +
-            "/my_tasks\n" +
-            "/start_task 1\n" +
-            "/close_task 1 комментарий\n\n" +
+            "/report - отправить ежедневный отчет за сегодня.\n" +
+            "/task текст - добавить выполненную задачу в отчет.\n" +
+            "Пример: /task Исправил ошибку в форме отчета\n" +
+            "/block текст - добавить проблему или блокер.\n" +
+            "Пример: /block Нет доступа к базе данных\n" +
+            "/my_last_report - посмотреть свой отчет за сегодня.\n" +
+            "/my_tasks - посмотреть свои назначенные задачи.\n" +
+            "/start_task номер - перевести задачу в работу.\n" +
+            "Пример: /start_task 1\n" +
+            "/close_task номер комментарий - закрыть задачу с комментарием.\n" +
+            "Пример: /close_task 1 Задача выполнена и проверена\n\n" +
             "Команды lead:\n" +
-            "/reports\n" +
-            "/employees\n" +
-            "/missing_reports\n" +
-            "/summary\n" +
-            "/employee_report Иван Иванов\n" +
-            "/assign_task Иван Иванов | Название задачи | 20.05.2026\n" +
-            "/employee_tasks Иван Иванов\n" +
-            "/team_tasks");
+            "/reports - посмотреть отчеты сотрудников за сегодня.\n" +
+            "/employees - посмотреть список сотрудников.\n" +
+            "/missing_reports - посмотреть, кто не отправил отчет.\n" +
+            "/summary - посмотреть краткую сводку по отчетам.\n" +
+            "/employee_report имя - посмотреть отчет конкретного сотрудника.\n" +
+            "Пример: /employee_report Иван Иванов\n" +
+            "/assign_task имя | задача | дата - назначить задачу сотруднику.\n" +
+            "Пример: /assign_task Иван Иванов | Подготовить отчет | 20.05.2026\n" +
+            "/employee_tasks имя - посмотреть задачи сотрудника.\n" +
+            "Пример: /employee_tasks Иван Иванов\n" +
+            "/team_tasks - посмотреть задачи всей группы.");
+    }
+
+    /// <summary>
+    /// Отправляет описание программы и версию.
+    /// </summary>
+    private void SendInfo(long chatId)
+    {
+        Send(chatId,
+            "О программе\n\n" +
+            "Бот отчета - Telegram-бот для организации отчетности сотрудников перед lead.\n" +
+            "Бот позволяет сотрудникам отправлять ежедневные отчеты, указывать выполненные задачи и проблемы, " +
+            "а lead может назначать задачи, смотреть отчеты и контролировать статусы задач.\n\n" +
+            "Версия: 1.0.0");
     }
 
     /// <summary>

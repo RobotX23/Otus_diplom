@@ -27,6 +27,8 @@ public class TelegramBotRunner
     /// </summary>
     public async Task RunAsync(CancellationToken cancellationToken)
     {
+        await RegisterBotCommandsAsync();
+
         var receiverOptions = new ReceiverOptions
         {
             AllowedUpdates = [UpdateType.Message]
@@ -50,6 +52,36 @@ public class TelegramBotRunner
         {
             Console.WriteLine("Telegram-бот остановлен.");
         }
+    }
+
+    /// <summary>
+    /// Регистрирует список команд, который Telegram показывает пользователю как подсказки.
+    /// </summary>
+    private async Task RegisterBotCommandsAsync()
+    {
+        var commands = new[]
+        {
+            new BotCommand{ Command = "start", Description = "Авторизация"},
+            new BotCommand{ Command = "help", Description = "Помощь"},
+            new BotCommand{ Command = "info", Description = "О программе"},
+            new BotCommand{ Command = "report", Description = "Отправить ежедневный отчет"},
+            new BotCommand{ Command = "task", Description = "Добавить выполненную задачу"},
+            new BotCommand{ Command = "block", Description = "Добавить проблему или блокер"},
+            new BotCommand{ Command = "my_last_report", Description = "Показать последний отчет"},
+            new BotCommand{ Command = "my_tasks", Description = "Показать свои задачи"},
+            new BotCommand{ Command = "start_task", Description = "Перевести задачу в работу"},
+            new BotCommand{ Command = "close_task", Description = "Закрыть задачу"},
+            new BotCommand{ Command = "reports", Description = "Показать отчеты сотрудников"},
+            new BotCommand{ Command = "employees", Description = "Показать сотрудников"},
+            new BotCommand{ Command = "missing_reports", Description = "Кто не отправил отчет"},
+            new BotCommand{ Command = "summary", Description = "Сводка по отчетам"},
+            new BotCommand{ Command = "employee_report", Description = "Отчет сотрудника"},
+            new BotCommand{ Command = "assign_task", Description = "Назначить задачу"},
+            new BotCommand{ Command = "employee_tasks", Description = "Задачи сотрудника"},
+            new BotCommand{ Command = "team_tasks", Description = "Задачи всей группы"}
+        };
+
+        await _botClient.SetMyCommands(commands);
     }
 
     /// <summary>
