@@ -1,21 +1,24 @@
-using Otus_diplom.Data;
-using Otus_diplom.Models;
+using Otus_diplom.Core.DataAccess;
+using Otus_diplom.Core.Entities;
+using Otus_diplom.Core.Exceptions;
 
-namespace Otus_diplom.Services;
+namespace Otus_diplom.Core.Services;
 
 /// <summary>
 /// Сервис для работы с ежедневными отчетами сотрудников.
 /// </summary>
-public class ReportService
+public class ReportService : IReportService
 {
-    private readonly InMemoryStorage _storage;
+    private readonly IReportRepository _reportRepository;
+    private readonly int _maxCompletedTaskLength;
 
     /// <summary>
-    /// Создает сервис отчетов и получает доступ к хранилищу в памяти.
+    /// Создает сервис отчетов, получает репозиторий отчетов и ограничение длины выполненной задачи.
     /// </summary>
-    public ReportService(InMemoryStorage storage)
+    public ReportService(IReportRepository reportRepository, int maxCompletedTaskLength)
     {
-        _storage = storage;
+        _reportRepository = reportRepository;
+        _maxCompletedTaskLength = maxCompletedTaskLength;
     }
 
     /// <summary>
@@ -25,6 +28,7 @@ public class ReportService
     {
         var report = GetOrCreateTodayReport(employee);
         report.IsSent = true;
+        _reportRepository.Save(report);
         return report;
     }
 
@@ -33,8 +37,11 @@ public class ReportService
     /// </summary>
     public void AddCompletedTask(User employee, string text)
     {
+        ValidateCompletedTaskText(text);
+
         var report = GetOrCreateTodayReport(employee);
         report.CompletedTasks.Add(text);
+        _reportRepository.Save(report);
     }
 
     /// <summary>
@@ -44,6 +51,7 @@ public class ReportService
     {
         var report = GetOrCreateTodayReport(employee);
         report.Blocks.Add(text);
+        _reportRepository.Save(report);
     }
 
     /// <summary>
@@ -51,8 +59,7 @@ public class ReportService
     /// </summary>
     public DailyReport? GetTodayReport(User employee)
     {
-        return _storage.Reports.FirstOrDefault(report =>
-            report.EmployeeId == employee.Id && report.Date == DateOnly.FromDateTime(DateTime.Today));
+        return _reportRepository.GetByEmployeeAndDate(employee.Id, DateOnly.FromDateTime(DateTime.Today));
     }
 
     /// <summary>
@@ -61,7 +68,7 @@ public class ReportService
     public List<DailyReport> GetTodayReports()
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
-        return _storage.Reports.Where(report => report.Date == today).ToList();
+        return _reportRepository.GetByDate(today);
     }
 
     /// <summary>
@@ -70,8 +77,7 @@ public class ReportService
     private DailyReport GetOrCreateTodayReport(User employee)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
-        var report = _storage.Reports.FirstOrDefault(item =>
-            item.EmployeeId == employee.Id && item.Date == today);
+        var report = _reportRepository.GetByEmployeeAndDate(employee.Id, today);
 
         if (report is not null)
         {
@@ -80,12 +86,28 @@ public class ReportService
 
         report = new DailyReport
         {
-            Id = _storage.GetNextReportId(),
+            Id = _reportRepository.GetNextId(),
             EmployeeId = employee.Id,
             Date = today
         };
 
-        _storage.Reports.Add(report);
+        _reportRepository.Add(report);
         return report;
+    }
+
+    /// <summary>
+    /// Проверяет текст выполненной задачи для отчета.
+    /// </summary>
+    private void ValidateCompletedTaskText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new DomainException("Текст выполненной задачи не может быть пустым.");
+        }
+
+        if (text.Length > _maxCompletedTaskLength)
+        {
+            throw new DomainException($"Текст выполненной задачи не должен быть длиннее {_maxCompletedTaskLength} символов.");
+        }
     }
 }

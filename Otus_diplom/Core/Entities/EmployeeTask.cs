@@ -1,4 +1,4 @@
-namespace Otus_diplom.Models;
+namespace Otus_diplom.Core.Entities;
 
 /// <summary>
 /// Задача, которую lead назначает сотруднику.
@@ -14,6 +14,11 @@ public class EmployeeTask
     /// Номер сотрудника, которому назначена задача.
     /// </summary>
     public int EmployeeId { get; set; }
+
+    /// <summary>
+    /// Номер lead, который назначил задачу.
+    /// </summary>
+    public int LeadId { get; set; }
 
     /// <summary>
     /// Название или краткое описание задачи.

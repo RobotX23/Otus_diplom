@@ -1,7 +1,7 @@
-namespace Otus_diplom.Models;
+namespace Otus_diplom.Core.Entities;
 
 /// <summary>
-/// Пользователь консольного прототипа бота.
+/// Пользователь Telegram-бота.
 /// </summary>
 public class User
 {
@@ -9,6 +9,11 @@ public class User
     /// Уникальный номер пользователя.
     /// </summary>
     public int Id { get; set; }
+
+    /// <summary>
+    /// Идентификатор чата Telegram.
+    /// </summary>
+    public long TelegramChatId { get; set; }
 
     /// <summary>
     /// Имя пользователя, которое вводится в командах.

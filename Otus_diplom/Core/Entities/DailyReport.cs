@@ -1,4 +1,4 @@
-namespace Otus_diplom.Models;
+namespace Otus_diplom.Core.Entities;
 
 /// <summary>
 /// Ежедневный отчет сотрудника.

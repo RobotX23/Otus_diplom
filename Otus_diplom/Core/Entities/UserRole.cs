@@ -1,4 +1,4 @@
-namespace Otus_diplom.Models;
+namespace Otus_diplom.Core.Entities;
 
 /// <summary>
 /// Роль пользователя в учебном боте.
@@ -13,5 +13,10 @@ public enum UserRole
     /// <summary>
     /// Lead, который просматривает отчеты и назначает задачи сотрудникам.
     /// </summary>
-    Lead
+    Lead,
+
+    /// <summary>
+    /// Администратор, который настраивает пользователей и параметры бота.
+    /// </summary>
+    Administrator
 }

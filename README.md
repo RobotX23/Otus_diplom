@@ -143,6 +143,63 @@ dotnet run --project Otus_diplom/Otus_diplom.csproj
 /login 3
 ```
 
+## Архитектура реализации
+
+Проект разделен на слои по архитектурному промту.
+
+### Core
+
+Папка `Core` содержит доменные сущности, интерфейсы репозиториев и бизнес-сервисы.
+
+Основные части:
+
+- `Core/Entities` - сущности `User`, `DailyReport`, `EmployeeTask` и enum-статусы;
+- `Core/DataAccess` - интерфейсы репозиториев `IUserRepository`, `IReportRepository`, `ITaskRepository`;
+- `Core/Services` - интерфейсы и реализации бизнес-сервисов `IReportService`, `ReportService`, `ITaskService`, `TaskService`.
+
+Core не зависит от консоли, Telegram API или конкретной базы данных.
+
+### Infrastructure
+
+Папка `Infrastructure` содержит реализации хранения данных.
+
+Сейчас есть две группы классов:
+
+- `InMemoryUserRepository`, `InMemoryReportRepository`, `InMemoryTaskRepository` - рабочие реализации через `List<>`;
+- `SqlUserRepository`, `SqlReportRepository`, `SqlTaskRepository` - заготовки для будущей работы с базой данных.
+
+Также добавлены:
+
+- `IDataContextFactory` и `DataContextFactory` - заготовка фабрики подключения к БД;
+- `DataAccess/Models` - модели будущих таблиц БД;
+- `ModelMapper` - преобразование моделей БД в доменные сущности и обратно.
+
+### TelegramBot
+
+Папка `TelegramBot` содержит интерфейс отправки сообщений и заготовку Telegram-слоя.
+
+Основные части:
+
+- `IMessageSender` - общий интерфейс отправки сообщений;
+- `ConsoleMessageSender` - текущая отправка сообщений через консоль;
+- `TelegramApiMessageSender` - заготовка отправки сообщений через Telegram API;
+- `UpdateHandler` - заготовка обработчика Telegram-команд.
+
+За счет интерфейса `IMessageSender` консольную отправку можно заменить на Telegram API без изменения бизнес-сервисов.
+
+### Переключение хранилища
+
+По умолчанию приложение использует хранение в памяти.
+
+Для будущего SQL-хранилища предусмотрены переменные окружения:
+
+```text
+DATA_PROVIDER=sql
+DB_CONNECTION_STRING=строка_подключения
+```
+
+SQL-репозитории сейчас являются учебными заготовками. Полная работа с реальной БД будет добавляться отдельно.
+
 ## Запросы и ответы бота
 
 Ниже описаны основные запросы пользователя и ответы Telegram-бота для функций из раздела с ролями.
