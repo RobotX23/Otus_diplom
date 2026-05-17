@@ -29,12 +29,13 @@ try
     IUserRepository userRepository = new SqlUserRepository(dataContextFactory);
     IReportRepository reportRepository = new SqlReportRepository(dataContextFactory);
     ITaskRepository taskRepository = new SqlTaskRepository(dataContextFactory);
+    IBotSettingsRepository botSettingsRepository = new SqlBotSettingsRepository(dataContextFactory);
 
     var reportService = new ReportService(reportRepository, maxCompletedTaskLength);
     var taskService = new TaskService(taskRepository, maxTaskTitleLength);
     IMessageSender messageSender = new TelegramApiMessageSender(botClient);
 
-    var updateHandler = new UpdateHandler(reportService, taskService, userRepository, messageSender);
+    var updateHandler = new UpdateHandler(reportService, taskService, userRepository, botSettingsRepository, messageSender);
     var botRunner = new TelegramBotRunner(botClient, updateHandler);
 
     using var cancellationTokenSource = new CancellationTokenSource();

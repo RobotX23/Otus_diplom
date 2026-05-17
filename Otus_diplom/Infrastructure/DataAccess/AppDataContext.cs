@@ -42,4 +42,9 @@ public class AppDataContext : DataConnection
     /// Таблица задач сотрудников.
     /// </summary>
     public ITable<SqlEmployeeTaskModel> EmployeeTasks => this.GetTable<SqlEmployeeTaskModel>();
+
+    /// <summary>
+    /// Таблица настроек бота.
+    /// </summary>
+    public ITable<SqlBotSettingModel> BotSettings => this.GetTable<SqlBotSettingModel>();
 }

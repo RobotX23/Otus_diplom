@@ -1,5 +1,6 @@
 using Otus_diplom.Core.DataAccess;
 using Otus_diplom.Core.Entities;
+using LinqToDB;
 
 namespace Otus_diplom.Infrastructure.DataAccess;
 
@@ -68,5 +69,43 @@ public class SqlUserRepository : IUserRepository
         var normalizedName = fullName.Trim();
         var model = db.Users.FirstOrDefault(user => user.FullName == normalizedName);
         return model is null ? null : ModelMapper.ToEntity(model);
+    }
+
+    /// <summary>
+    /// Добавляет нового пользователя в базу данных.
+    /// </summary>
+    public void Add(User user)
+    {
+        using var db = _dataContextFactory.CreateDataContext();
+        var model = ModelMapper.ToModel(user);
+        var id = db.InsertWithInt32Identity(model);
+        user.Id = id;
+    }
+
+    /// <summary>
+    /// Сохраняет изменения пользователя.
+    /// </summary>
+    public void Save(User user)
+    {
+        using var db = _dataContextFactory.CreateDataContext();
+        var model = ModelMapper.ToModel(user);
+
+        db.Users
+            .Where(item => item.Id == user.Id)
+            .Set(item => item.TelegramChatId, model.TelegramChatId)
+            .Set(item => item.FullName, model.FullName)
+            .Set(item => item.Role, model.Role)
+            .Update();
+    }
+
+    /// <summary>
+    /// Удаляет пользователя из базы данных.
+    /// </summary>
+    public bool Delete(int id)
+    {
+        using var db = _dataContextFactory.CreateDataContext();
+        return db.Users
+            .Where(user => user.Id == id)
+            .Delete() > 0;
     }
 }

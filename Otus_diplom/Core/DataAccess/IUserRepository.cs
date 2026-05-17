@@ -31,4 +31,19 @@ public interface IUserRepository
     /// Ищет пользователя по имени.
     /// </summary>
     User? GetByFullName(string fullName);
+
+    /// <summary>
+    /// Добавляет нового пользователя.
+    /// </summary>
+    void Add(User user);
+
+    /// <summary>
+    /// Сохраняет изменения пользователя.
+    /// </summary>
+    void Save(User user);
+
+    /// <summary>
+    /// Удаляет пользователя по номеру.
+    /// </summary>
+    bool Delete(int id);
 }

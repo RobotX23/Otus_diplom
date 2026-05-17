@@ -78,7 +78,13 @@ public class TelegramBotRunner
             new BotCommand{ Command = "employee_report", Description = "Отчет сотрудника"},
             new BotCommand{ Command = "assign_task", Description = "Назначить задачу"},
             new BotCommand{ Command = "employee_tasks", Description = "Задачи сотрудника"},
-            new BotCommand{ Command = "team_tasks", Description = "Задачи всей группы"}
+            new BotCommand{ Command = "team_tasks", Description = "Задачи всей группы"},
+            new BotCommand{ Command = "add_employee", Description = "Добавить сотрудника"},
+            new BotCommand{ Command = "set_lead", Description = "Назначить lead"},
+            new BotCommand{ Command = "remove_user", Description = "Удалить пользователя"},
+            new BotCommand{ Command = "users", Description = "Показать пользователей"},
+            new BotCommand{ Command = "settings", Description = "Показать настройки"},
+            new BotCommand{ Command = "set_task_deadline_reminder", Description = "Настроить дедлайн"}
         };
 
         await _botClient.SetMyCommands(commands);

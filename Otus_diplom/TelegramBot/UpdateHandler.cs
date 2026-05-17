@@ -15,6 +15,7 @@ public class UpdateHandler
     private readonly IReportService _reportService;
     private readonly ITaskService _taskService;
     private readonly IUserRepository _userRepository;
+    private readonly IBotSettingsRepository _botSettingsRepository;
     private readonly IMessageSender _messageSender;
 
     /// <summary>
@@ -24,11 +25,13 @@ public class UpdateHandler
         IReportService reportService,
         ITaskService taskService,
         IUserRepository userRepository,
+        IBotSettingsRepository botSettingsRepository,
         IMessageSender messageSender)
     {
         _reportService = reportService;
         _taskService = taskService;
         _userRepository = userRepository;
+        _botSettingsRepository = botSettingsRepository;
         _messageSender = messageSender;
     }
 
@@ -156,6 +159,30 @@ public class UpdateHandler
         {
             SendTeamTasks(chatId, user);
         }
+        else if (commandText.StartsWith("/add_employee ", StringComparison.OrdinalIgnoreCase))
+        {
+            AddEmployee(chatId, user, commandText["/add_employee ".Length..]);
+        }
+        else if (commandText.StartsWith("/set_lead ", StringComparison.OrdinalIgnoreCase))
+        {
+            SetLead(chatId, user, commandText["/set_lead ".Length..]);
+        }
+        else if (commandText.StartsWith("/remove_user ", StringComparison.OrdinalIgnoreCase))
+        {
+            RemoveUser(chatId, user, commandText["/remove_user ".Length..]);
+        }
+        else if (commandText == "/users")
+        {
+            SendUsers(chatId, user);
+        }
+        else if (commandText == "/settings")
+        {
+            SendSettings(chatId, user);
+        }
+        else if (commandText.StartsWith("/set_task_deadline_reminder ", StringComparison.OrdinalIgnoreCase))
+        {
+            SetTaskDeadlineReminder(chatId, user, commandText["/set_task_deadline_reminder ".Length..]);
+        }
         else
         {
             Send(chatId, "Команда не распознана. Введите /help для просмотра команд.");
@@ -211,7 +238,18 @@ public class UpdateHandler
             "Пример: /assign_task Иван Иванов | Подготовить отчет | 20.05.2026\n" +
             "/employee_tasks имя - посмотреть задачи сотрудника.\n" +
             "Пример: /employee_tasks Иван Иванов\n" +
-            "/team_tasks - посмотреть задачи всей группы.");
+            "/team_tasks - посмотреть задачи всей группы.\n\n" +
+            "Команды администратора:\n" +
+            "/add_employee имя | chat_id - добавить сотрудника.\n" +
+            "Пример: /add_employee Иван Иванов | 100001\n" +
+            "/set_lead имя - назначить пользователю роль lead.\n" +
+            "Пример: /set_lead Иван Иванов\n" +
+            "/remove_user имя - удалить пользователя.\n" +
+            "Пример: /remove_user Иван Иванов\n" +
+            "/users - посмотреть всех зарегистрированных пользователей.\n" +
+            "/settings - посмотреть настройки бота.\n" +
+            "/set_task_deadline_reminder часы - настроить уведомление до дедлайна задачи.\n" +
+            "Пример: /set_task_deadline_reminder 24");
     }
 
     /// <summary>
@@ -278,6 +316,24 @@ public class UpdateHandler
                 return true;
             case "Закрыть задачу" when user.Role == UserRole.Employee:
                 Send(chatId, "Чтобы закрыть задачу, отправьте номер и комментарий:\n/close_task 1 Задача выполнена");
+                return true;
+            case "Добавить сотрудника" when user.Role == UserRole.Administrator:
+                Send(chatId, "Чтобы добавить сотрудника, отправьте:\n/add_employee Иван Иванов | 100001");
+                return true;
+            case "Назначить lead" when user.Role == UserRole.Administrator:
+                Send(chatId, "Чтобы назначить роль lead, отправьте:\n/set_lead Иван Иванов");
+                return true;
+            case "Удалить пользователя" when user.Role == UserRole.Administrator:
+                Send(chatId, "Чтобы удалить пользователя, отправьте:\n/remove_user Иван Иванов");
+                return true;
+            case "Пользователи" when user.Role == UserRole.Administrator:
+                SendUsers(chatId, user);
+                return true;
+            case "Настройки" when user.Role == UserRole.Administrator:
+                SendSettings(chatId, user);
+                return true;
+            case "Настроить дедлайн" when user.Role == UserRole.Administrator:
+                Send(chatId, "Чтобы настроить уведомление до дедлайна, отправьте:\n/set_task_deadline_reminder 24");
                 return true;
             case "Помощь":
                 SendHelp(chatId);
@@ -390,6 +446,21 @@ public class UpdateHandler
     {
         return new ReplyKeyboardMarkup(new[]
         {
+            new[]
+            {
+                new KeyboardButton("Добавить сотрудника"),
+                new KeyboardButton("Назначить lead")
+            },
+            new[]
+            {
+                new KeyboardButton("Удалить пользователя"),
+                new KeyboardButton("Пользователи")
+            },
+            new[]
+            {
+                new KeyboardButton("Настройки"),
+                new KeyboardButton("Настроить дедлайн")
+            },
             new[]
             {
                 new KeyboardButton("Помощь"),
@@ -772,6 +843,161 @@ public class UpdateHandler
     }
 
     /// <summary>
+    /// Добавляет сотрудника через команду администратора.
+    /// </summary>
+    private void AddEmployee(long chatId, User admin, string value)
+    {
+        if (!CheckAdministratorRole(chatId, admin))
+        {
+            return;
+        }
+
+        var parts = value.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 2 || !long.TryParse(parts[1], out var telegramChatId))
+        {
+            Send(chatId, "Используйте формат:\n/add_employee Иван Иванов | 100001");
+            return;
+        }
+
+        if (_userRepository.GetByFullName(parts[0]) is not null)
+        {
+            Send(chatId, "Пользователь с таким именем уже существует.");
+            return;
+        }
+
+        if (_userRepository.GetByTelegramChatId(telegramChatId) is not null)
+        {
+            Send(chatId, "Пользователь с таким Telegram chat id уже существует.");
+            return;
+        }
+
+        var employee = new User
+        {
+            FullName = parts[0],
+            TelegramChatId = telegramChatId,
+            Role = UserRole.Employee
+        };
+
+        _userRepository.Add(employee);
+        Send(chatId, $"Сотрудник {employee.FullName} добавлен.");
+    }
+
+    /// <summary>
+    /// Назначает пользователю роль lead.
+    /// </summary>
+    private void SetLead(long chatId, User admin, string value)
+    {
+        if (!CheckAdministratorRole(chatId, admin))
+        {
+            return;
+        }
+
+        var user = FindUser(value);
+        if (user is null)
+        {
+            Send(chatId, "Пользователь не найден.");
+            return;
+        }
+
+        user.Role = UserRole.Lead;
+        _userRepository.Save(user);
+        Send(chatId, $"Пользователю {user.FullName} назначена роль lead.");
+    }
+
+    /// <summary>
+    /// Удаляет пользователя.
+    /// </summary>
+    private void RemoveUser(long chatId, User admin, string value)
+    {
+        if (!CheckAdministratorRole(chatId, admin))
+        {
+            return;
+        }
+
+        var user = FindUser(value);
+        if (user is null)
+        {
+            Send(chatId, "Пользователь не найден.");
+            return;
+        }
+
+        if (user.Id == admin.Id)
+        {
+            Send(chatId, "Администратор не может удалить сам себя.");
+            return;
+        }
+
+        var isDeleted = _userRepository.Delete(user.Id);
+        Send(chatId, isDeleted
+            ? $"Пользователь {user.FullName} удален."
+            : "Пользователь не удален.");
+    }
+
+    /// <summary>
+    /// Показывает список зарегистрированных пользователей.
+    /// </summary>
+    private void SendUsers(long chatId, User admin)
+    {
+        if (!CheckAdministratorRole(chatId, admin))
+        {
+            return;
+        }
+
+        var lines = _userRepository.GetAll()
+            .OrderBy(user => user.Id)
+            .Select(user => $"{user.Id}. {user.FullName} - {GetRoleName(user.Role)} - chat id: {user.TelegramChatId}")
+            .ToList();
+
+        Send(chatId, lines.Count == 0
+            ? "Пользователи не найдены."
+            : "Зарегистрированные пользователи:\n" + string.Join('\n', lines));
+    }
+
+    /// <summary>
+    /// Показывает настройки бота.
+    /// </summary>
+    private void SendSettings(long chatId, User admin)
+    {
+        if (!CheckAdministratorRole(chatId, admin))
+        {
+            return;
+        }
+
+        var settings = _botSettingsRepository.GetAll();
+        if (settings.Count == 0)
+        {
+            Send(chatId, "Настройки не найдены.");
+            return;
+        }
+
+        var lines = settings
+            .OrderBy(setting => setting.Key)
+            .Select(setting => $"{setting.Key}: {setting.Value}");
+
+        Send(chatId, "Настройки бота:\n" + string.Join('\n', lines));
+    }
+
+    /// <summary>
+    /// Настраивает время уведомления до окончания срока задачи.
+    /// </summary>
+    private void SetTaskDeadlineReminder(long chatId, User admin, string value)
+    {
+        if (!CheckAdministratorRole(chatId, admin))
+        {
+            return;
+        }
+
+        if (!int.TryParse(value.Trim(), out var hours) || hours < 0)
+        {
+            Send(chatId, "Укажите количество часов. Пример:\n/set_task_deadline_reminder 24");
+            return;
+        }
+
+        _botSettingsRepository.SetValue("task_deadline_reminder_hours", hours.ToString());
+        Send(chatId, $"Уведомление о дедлайне будет отправляться за {hours} часов.");
+    }
+
+    /// <summary>
     /// Формирует текст со списком задач сотрудника.
     /// </summary>
     private string FormatEmployeeTasks(User employee)
@@ -829,6 +1055,20 @@ public class UpdateHandler
     }
 
     /// <summary>
+    /// Проверяет, что пользователь является администратором.
+    /// </summary>
+    private bool CheckAdministratorRole(long chatId, User user)
+    {
+        if (user.Role == UserRole.Administrator)
+        {
+            return true;
+        }
+
+        Send(chatId, "Команда доступна только администратору.");
+        return false;
+    }
+
+    /// <summary>
     /// Ищет сотрудника по номеру, полному имени или части имени.
     /// </summary>
     private User? FindEmployee(string value)
@@ -851,6 +1091,30 @@ public class UpdateHandler
 
         return employees.FirstOrDefault(employee =>
             NormalizeText(employee.FullName).Contains(normalizedValue, StringComparison.CurrentCultureIgnoreCase));
+    }
+
+    /// <summary>
+    /// Ищет пользователя по номеру, полному имени или части имени.
+    /// </summary>
+    private User? FindUser(string value)
+    {
+        var normalizedValue = NormalizeText(value);
+        if (int.TryParse(normalizedValue, out var userId))
+        {
+            return _userRepository.GetById(userId);
+        }
+
+        var users = _userRepository.GetAll();
+        var exactMatch = users.FirstOrDefault(user =>
+            NormalizeText(user.FullName).Equals(normalizedValue, StringComparison.CurrentCultureIgnoreCase));
+
+        if (exactMatch is not null)
+        {
+            return exactMatch;
+        }
+
+        return users.FirstOrDefault(user =>
+            NormalizeText(user.FullName).Contains(normalizedValue, StringComparison.CurrentCultureIgnoreCase));
     }
 
     /// <summary>
@@ -882,6 +1146,20 @@ public class UpdateHandler
             TaskStatus.Open => "открыто",
             TaskStatus.InProgress => "в работе",
             TaskStatus.Closed => "закрыто",
+            _ => "неизвестно"
+        };
+    }
+
+    /// <summary>
+    /// Возвращает русское название роли.
+    /// </summary>
+    private static string GetRoleName(UserRole role)
+    {
+        return role switch
+        {
+            UserRole.Employee => "сотрудник",
+            UserRole.Lead => "lead",
+            UserRole.Administrator => "администратор",
             _ => "неизвестно"
         };
     }
