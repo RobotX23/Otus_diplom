@@ -164,6 +164,14 @@ public class UpdateHandler
             return;
         }
 
+        if (commandText.Equals("/remove_user", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Equals("Удалить пользователя", StringComparison.CurrentCultureIgnoreCase))
+        {
+            _scenarioContextRepository.Delete(chatId);
+            StartDeleteEmployeeScenario(chatId, user);
+            return;
+        }
+
         if (HandleActiveScenario(chatId, user, commandText))
         {
             return;
@@ -246,6 +254,10 @@ public class UpdateHandler
         else if (commandText.StartsWith("/set_lead ", StringComparison.OrdinalIgnoreCase))
         {
             SetLead(chatId, user, commandText["/set_lead ".Length..]);
+        }
+        else if (commandText.Equals("/remove_user", StringComparison.OrdinalIgnoreCase))
+        {
+            StartDeleteEmployeeScenario(chatId, user);
         }
         else if (commandText.StartsWith("/remove_user ", StringComparison.OrdinalIgnoreCase))
         {
@@ -403,7 +415,7 @@ public class UpdateHandler
                 StartAssignLeadScenario(chatId, user);
                 return true;
             case "Удалить пользователя" when user.Role == UserRole.Administrator:
-                Send(chatId, "Чтобы удалить пользователя, отправьте:\n/remove_user Иван Иванов");
+                StartDeleteEmployeeScenario(chatId, user);
                 return true;
             case "Пользователи" when user.Role == UserRole.Administrator:
                 SendUsers(chatId, user);
@@ -973,6 +985,21 @@ public class UpdateHandler
     }
 
     /// <summary>
+    /// Запускает сценарий удаления сотрудника.
+    /// </summary>
+    private void StartDeleteEmployeeScenario(long chatId, User admin)
+    {
+        if (!CheckAdministratorRole(chatId, admin))
+        {
+            return;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.DeleteEmployee));
+        var result = scenario.Start(chatId, admin);
+        Send(chatId, result.Message, result.Keyboard);
+    }
+
+    /// <summary>
     /// Назначает пользователю роль lead.
     /// </summary>
     private void SetLead(long chatId, User admin, string value)
@@ -1010,16 +1037,8 @@ public class UpdateHandler
             return;
         }
 
-        if (user.Id == admin.Id)
-        {
-            Send(chatId, "Администратор не может удалить сам себя.");
-            return;
-        }
-
-        var isDeleted = _userRepository.Delete(user.Id);
-        Send(chatId, isDeleted
-            ? $"Пользователь {user.FullName} удален."
-            : "Пользователь не удален.");
+        var deletedUser = _userService.DeleteEmployee(admin, user.Id);
+        Send(chatId, $"Сотрудник {deletedUser.FullName} удален.");
     }
 
     /// <summary>

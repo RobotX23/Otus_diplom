@@ -40,7 +40,8 @@ try
     var scenarios = new List<IScenario>
     {
         new AddEmployeeScenario(userService, scenarioContextRepository),
-        new AssignLeadScenario(userService, scenarioContextRepository)
+        new AssignLeadScenario(userService, scenarioContextRepository),
+        new DeleteEmployeeScenario(userService, scenarioContextRepository)
     };
 
     var updateHandler = new UpdateHandler(

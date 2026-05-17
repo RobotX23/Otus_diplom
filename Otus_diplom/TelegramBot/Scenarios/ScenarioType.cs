@@ -13,5 +13,10 @@ public enum ScenarioType
     /// <summary>
     /// Сценарий назначения lead.
     /// </summary>
-    AssignLead
+    AssignLead,
+
+    /// <summary>
+    /// Сценарий удаления сотрудника.
+    /// </summary>
+    DeleteEmployee
 }

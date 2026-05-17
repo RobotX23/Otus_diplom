@@ -97,6 +97,46 @@ public class UserService : IUserService
     }
 
     /// <summary>
+    /// Возвращает сотрудников, которых можно удалить.
+    /// </summary>
+    public List<User> GetDeleteCandidates(User admin)
+    {
+        if (admin.Role != UserRole.Administrator)
+        {
+            throw new DomainException("Команда доступна только администратору.");
+        }
+
+        return _userRepository.GetAll()
+            .Where(user => user.Role == UserRole.Employee)
+            .OrderBy(user => user.FullName)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Удаляет выбранного сотрудника.
+    /// </summary>
+    public User DeleteEmployee(User admin, int userId)
+    {
+        if (admin.Role != UserRole.Administrator)
+        {
+            throw new DomainException("Команда доступна только администратору.");
+        }
+
+        var selectedUser = _userRepository.GetById(userId);
+        if (selectedUser is null || selectedUser.Role != UserRole.Employee)
+        {
+            throw new DomainException("Можно удалить только сотрудника. Администратора и lead удалить нельзя.");
+        }
+
+        if (!_userRepository.Delete(selectedUser.Id))
+        {
+            throw new DomainException("Не удалось удалить сотрудника.");
+        }
+
+        return selectedUser;
+    }
+
+    /// <summary>
     /// Привязывает chat id Telegram к пользователю, найденному по username.
     /// </summary>
     public User? AttachTelegramChatId(string? telegramUsername, long chatId)

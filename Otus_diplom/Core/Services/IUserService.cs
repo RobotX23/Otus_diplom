@@ -23,6 +23,16 @@ public interface IUserService
     User AssignLead(User admin, int userId);
 
     /// <summary>
+    /// Возвращает сотрудников, которых можно удалить.
+    /// </summary>
+    List<User> GetDeleteCandidates(User admin);
+
+    /// <summary>
+    /// Удаляет выбранного сотрудника.
+    /// </summary>
+    User DeleteEmployee(User admin, int userId);
+
+    /// <summary>
     /// Привязывает chat id Telegram к пользователю, найденному по username.
     /// </summary>
     User? AttachTelegramChatId(string? telegramUsername, long chatId);
