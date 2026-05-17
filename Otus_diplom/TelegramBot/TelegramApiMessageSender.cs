@@ -1,4 +1,5 @@
 using Telegram.Bot;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Otus_diplom.TelegramBot;
 
@@ -20,8 +21,8 @@ public class TelegramApiMessageSender : IMessageSender
     /// <summary>
     /// Отправляет текстовое сообщение в Telegram-чат.
     /// </summary>
-    public void SendMessage(long chatId, string text)
+    public void SendMessage(long chatId, string text, ReplyMarkup? keyboard = null)
     {
-        _botClient.SendMessage(chatId, text).GetAwaiter().GetResult();
+        _botClient.SendMessage(chatId, text, replyMarkup: keyboard).GetAwaiter().GetResult();
     }
 }

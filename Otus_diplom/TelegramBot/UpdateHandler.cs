@@ -2,6 +2,7 @@ using Otus_diplom.Core.DataAccess;
 using Otus_diplom.Core.Entities;
 using Otus_diplom.Core.Exceptions;
 using Otus_diplom.Core.Services;
+using Telegram.Bot.Types.ReplyMarkups;
 using TaskStatus = Otus_diplom.Core.Entities.TaskStatus;
 
 namespace Otus_diplom.TelegramBot;
@@ -90,6 +91,11 @@ public class UpdateHandler
             return;
         }
 
+        if (HandleKeyboardButton(chatId, user, commandText))
+        {
+            return;
+        }
+
         if (commandText == "/report")
         {
             SendReport(chatId, user);
@@ -161,7 +167,14 @@ public class UpdateHandler
     /// </summary>
     private void SendStart(long chatId)
     {
-        Send(chatId, "Бот отчетности сотрудников запущен. Введите /help для просмотра команд.");
+        var user = _userRepository.GetByTelegramChatId(chatId);
+        if (user is null)
+        {
+            Send(chatId, "Бот отчетности сотрудников запущен. Пользователь не найден. Обратитесь к администратору.");
+            return;
+        }
+
+        SendRoleMenu(chatId, user);
     }
 
     /// <summary>
@@ -212,6 +225,200 @@ public class UpdateHandler
             "Бот позволяет сотрудникам отправлять ежедневные отчеты, указывать выполненные задачи и проблемы, " +
             "а lead может назначать задачи, смотреть отчеты и контролировать статусы задач.\n\n" +
             "Версия: 1.0.0");
+    }
+
+    /// <summary>
+    /// Обрабатывает текст, который пришел от кнопки обычной Telegram-клавиатуры.
+    /// </summary>
+    private bool HandleKeyboardButton(long chatId, User user, string buttonText)
+    {
+        switch (buttonText)
+        {
+            case "Назначить задачу" when user.Role == UserRole.Lead:
+                Send(chatId, "Чтобы назначить задачу, отправьте:\n/assign_task Иван Иванов | Подготовить отчет | 20.05.2026");
+                return true;
+            case "Отчеты" when user.Role == UserRole.Lead:
+                SendReports(chatId, user);
+                return true;
+            case "Сотрудники" when user.Role == UserRole.Lead:
+                SendEmployees(chatId, user);
+                return true;
+            case "Не сдали отчет" when user.Role == UserRole.Lead:
+                SendMissingReports(chatId, user);
+                return true;
+            case "Сводка" when user.Role == UserRole.Lead:
+                SendSummary(chatId, user);
+                return true;
+            case "Отчет сотрудника" when user.Role == UserRole.Lead:
+                Send(chatId, "Чтобы посмотреть отчет сотрудника, отправьте:\n/employee_report Иван Иванов");
+                return true;
+            case "Задачи сотрудника" when user.Role == UserRole.Lead:
+                Send(chatId, "Чтобы посмотреть задачи сотрудника, отправьте:\n/employee_tasks Иван Иванов");
+                return true;
+            case "Задачи группы" when user.Role == UserRole.Lead:
+                SendTeamTasks(chatId, user);
+                return true;
+            case "Отправить отчет" when user.Role == UserRole.Employee:
+                SendReport(chatId, user);
+                return true;
+            case "Добавить задачу в отчет" when user.Role == UserRole.Employee:
+                Send(chatId, "Чтобы добавить выполненную задачу в отчет, отправьте:\n/task Исправил ошибку в форме отчета");
+                return true;
+            case "Добавить проблему" when user.Role == UserRole.Employee:
+                Send(chatId, "Чтобы добавить проблему или блокер, отправьте:\n/block Нет доступа к базе данных");
+                return true;
+            case "Последний отчет" when user.Role == UserRole.Employee:
+                SendMyLastReport(chatId, user);
+                return true;
+            case "Мои задачи" when user.Role == UserRole.Employee:
+                SendEmployeeTasks(chatId, user);
+                return true;
+            case "Взять задачу в работу" when user.Role == UserRole.Employee:
+                Send(chatId, "Чтобы перевести задачу в работу, отправьте:\n/start_task 1");
+                return true;
+            case "Закрыть задачу" when user.Role == UserRole.Employee:
+                Send(chatId, "Чтобы закрыть задачу, отправьте номер и комментарий:\n/close_task 1 Задача выполнена");
+                return true;
+            case "Помощь":
+                SendHelp(chatId);
+                return true;
+            case "О программе":
+                SendInfo(chatId);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// Отправляет обычную Telegram-клавиатуру с кнопками, доступными роли пользователя.
+    /// </summary>
+    private void SendRoleMenu(long chatId, User user)
+    {
+        var keyboard = user.Role switch
+        {
+            UserRole.Employee => CreateEmployeeKeyboard(),
+            UserRole.Lead => CreateLeadKeyboard(),
+            UserRole.Administrator => CreateAdministratorKeyboard(),
+            _ => CreateCommonKeyboard()
+        };
+
+        Send(chatId, $"Здравствуйте, {user.FullName}. Выберите действие:", keyboard);
+    }
+
+    /// <summary>
+    /// Создает клавиатуру сотрудника.
+    /// </summary>
+    private static ReplyKeyboardMarkup CreateEmployeeKeyboard()
+    {
+        return new ReplyKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                new KeyboardButton("Отправить отчет"),
+                new KeyboardButton("Добавить задачу в отчет")
+            },
+            new[]
+            {
+                new KeyboardButton("Добавить проблему"),
+                new KeyboardButton("Последний отчет")
+            },
+            new[]
+            {
+                new KeyboardButton("Мои задачи"),
+                new KeyboardButton("Взять задачу в работу")
+            },
+            new[]
+            {
+                new KeyboardButton("Закрыть задачу")
+            },
+            new[]
+            {
+                new KeyboardButton("Помощь"),
+                new KeyboardButton("О программе")
+            }
+        })
+        {
+            ResizeKeyboard = true,
+            IsPersistent = true
+        };
+    }
+
+    /// <summary>
+    /// Создает клавиатуру lead.
+    /// </summary>
+    private static ReplyKeyboardMarkup CreateLeadKeyboard()
+    {
+        return new ReplyKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                new KeyboardButton("Отчеты"),
+                new KeyboardButton("Сотрудники")
+            },
+            new[]
+            {
+                new KeyboardButton("Не сдали отчет"),
+                new KeyboardButton("Сводка")
+            },
+            new[]
+            {
+                new KeyboardButton("Отчет сотрудника"),
+                new KeyboardButton("Назначить задачу")
+            },
+            new[]
+            {
+                new KeyboardButton("Задачи сотрудника"),
+                new KeyboardButton("Задачи группы")
+            },
+            new[]
+            {
+                new KeyboardButton("Помощь"),
+                new KeyboardButton("О программе")
+            }
+        })
+        {
+            ResizeKeyboard = true,
+            IsPersistent = true
+        };
+    }
+
+    /// <summary>
+    /// Создает клавиатуру администратора.
+    /// </summary>
+    private static ReplyKeyboardMarkup CreateAdministratorKeyboard()
+    {
+        return new ReplyKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                new KeyboardButton("Помощь"),
+                new KeyboardButton("О программе")
+            }
+        })
+        {
+            ResizeKeyboard = true,
+            IsPersistent = true
+        };
+    }
+
+    /// <summary>
+    /// Создает общую клавиатуру.
+    /// </summary>
+    private static ReplyKeyboardMarkup CreateCommonKeyboard()
+    {
+        return new ReplyKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                new KeyboardButton("Помощь"),
+                new KeyboardButton("О программе")
+            }
+        })
+        {
+            ResizeKeyboard = true,
+            IsPersistent = true
+        };
     }
 
     /// <summary>
@@ -690,11 +897,11 @@ public class UpdateHandler
     /// <summary>
     /// Отправляет сообщение пользователю.
     /// </summary>
-    private void Send(long chatId, string text)
+    private void Send(long chatId, string text, ReplyMarkup? keyboard = null)
     {
         try
         {
-            _messageSender.SendMessage(chatId, text);
+            _messageSender.SendMessage(chatId, text, keyboard);
         }
         catch (Exception exception)
         {

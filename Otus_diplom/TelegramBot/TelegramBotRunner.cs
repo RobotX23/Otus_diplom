@@ -91,13 +91,12 @@ public class TelegramBotRunner
     {
         try
         {
-            var message = update.Message;
-            if (message?.Text is null)
+            if (update.Message?.Text is not null)
             {
+                _updateHandler.HandleTextMessage(update.Message.Chat.Id, update.Message.Text);
                 return Task.CompletedTask;
             }
 
-            _updateHandler.HandleTextMessage(message.Chat.Id, message.Text);
         }
         catch (Exception exception)
         {
