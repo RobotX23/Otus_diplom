@@ -84,7 +84,8 @@ public class TelegramBotRunner
             new BotCommand{ Command = "remove_user", Description = "Удалить пользователя"},
             new BotCommand{ Command = "users", Description = "Показать пользователей"},
             new BotCommand{ Command = "settings", Description = "Показать настройки"},
-            new BotCommand{ Command = "set_task_deadline_reminder", Description = "Настроить дедлайн"}
+            new BotCommand{ Command = "set_task_deadline_reminder", Description = "Настроить дедлайн"},
+            new BotCommand{ Command = "set_report_reminder_time", Description = "Настроить время отчета"}
         };
 
         await _botClient.SetMyCommands(commands);

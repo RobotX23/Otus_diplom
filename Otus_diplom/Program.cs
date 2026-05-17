@@ -35,19 +35,23 @@ try
     var reportService = new ReportService(reportRepository, maxCompletedTaskLength);
     var taskService = new TaskService(taskRepository, maxTaskTitleLength);
     IUserService userService = new UserService(userRepository);
+    IBotSettingsService botSettingsService = new BotSettingsService(botSettingsRepository);
     IMessageSender messageSender = new TelegramApiMessageSender(botClient);
     IScenarioContextRepository scenarioContextRepository = new InMemoryScenarioContextRepository();
     var scenarios = new List<IScenario>
     {
         new AddEmployeeScenario(userService, scenarioContextRepository),
         new AssignLeadScenario(userService, scenarioContextRepository),
-        new DeleteEmployeeScenario(userService, scenarioContextRepository)
+        new DeleteEmployeeScenario(userService, scenarioContextRepository),
+        new TaskDeadlineReminderScenario(botSettingsService, scenarioContextRepository),
+        new DailyReportReminderScenario(botSettingsService, scenarioContextRepository)
     };
 
     var updateHandler = new UpdateHandler(
         reportService,
         taskService,
         userService,
+        botSettingsService,
         userRepository,
         botSettingsRepository,
         messageSender,

@@ -18,5 +18,15 @@ public enum ScenarioType
     /// <summary>
     /// Сценарий удаления сотрудника.
     /// </summary>
-    DeleteEmployee
+    DeleteEmployee,
+
+    /// <summary>
+    /// Сценарий настройки уведомления о дедлайне задачи.
+    /// </summary>
+    TaskDeadlineReminder,
+
+    /// <summary>
+    /// Сценарий настройки времени напоминания об отчете.
+    /// </summary>
+    DailyReportReminder
 }

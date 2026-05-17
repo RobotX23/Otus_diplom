@@ -16,6 +16,7 @@ public class UpdateHandler
     private readonly IReportService _reportService;
     private readonly ITaskService _taskService;
     private readonly IUserService _userService;
+    private readonly IBotSettingsService _botSettingsService;
     private readonly IUserRepository _userRepository;
     private readonly IBotSettingsRepository _botSettingsRepository;
     private readonly IMessageSender _messageSender;
@@ -29,6 +30,7 @@ public class UpdateHandler
         IReportService reportService,
         ITaskService taskService,
         IUserService userService,
+        IBotSettingsService botSettingsService,
         IUserRepository userRepository,
         IBotSettingsRepository botSettingsRepository,
         IMessageSender messageSender,
@@ -38,6 +40,7 @@ public class UpdateHandler
         _reportService = reportService;
         _taskService = taskService;
         _userService = userService;
+        _botSettingsService = botSettingsService;
         _userRepository = userRepository;
         _botSettingsRepository = botSettingsRepository;
         _messageSender = messageSender;
@@ -172,6 +175,22 @@ public class UpdateHandler
             return;
         }
 
+        if (commandText.Equals("/set_task_deadline_reminder", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Equals("Настроить дедлайн", StringComparison.CurrentCultureIgnoreCase))
+        {
+            _scenarioContextRepository.Delete(chatId);
+            StartTaskDeadlineReminderScenario(chatId, user);
+            return;
+        }
+
+        if (commandText.Equals("/set_report_reminder_time", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Equals("Время отчета", StringComparison.CurrentCultureIgnoreCase))
+        {
+            _scenarioContextRepository.Delete(chatId);
+            StartDailyReportReminderScenario(chatId, user);
+            return;
+        }
+
         if (HandleActiveScenario(chatId, user, commandText))
         {
             return;
@@ -274,6 +293,14 @@ public class UpdateHandler
         else if (commandText.StartsWith("/set_task_deadline_reminder ", StringComparison.OrdinalIgnoreCase))
         {
             SetTaskDeadlineReminder(chatId, user, commandText["/set_task_deadline_reminder ".Length..]);
+        }
+        else if (commandText.Equals("/set_task_deadline_reminder", StringComparison.OrdinalIgnoreCase))
+        {
+            StartTaskDeadlineReminderScenario(chatId, user);
+        }
+        else if (commandText.Equals("/set_report_reminder_time", StringComparison.OrdinalIgnoreCase))
+        {
+            StartDailyReportReminderScenario(chatId, user);
         }
         else
         {
@@ -424,7 +451,10 @@ public class UpdateHandler
                 SendSettings(chatId, user);
                 return true;
             case "Настроить дедлайн" when user.Role == UserRole.Administrator:
-                Send(chatId, "Чтобы настроить уведомление до дедлайна, отправьте:\n/set_task_deadline_reminder 24");
+                StartTaskDeadlineReminderScenario(chatId, user);
+                return true;
+            case "Время отчета" when user.Role == UserRole.Administrator:
+                StartDailyReportReminderScenario(chatId, user);
                 return true;
             case "Помощь":
                 SendHelp(chatId);
@@ -551,6 +581,10 @@ public class UpdateHandler
             {
                 new KeyboardButton("Настройки"),
                 new KeyboardButton("Настроить дедлайн")
+            },
+            new[]
+            {
+                new KeyboardButton("Время отчета")
             },
             new[]
             {
@@ -1000,6 +1034,36 @@ public class UpdateHandler
     }
 
     /// <summary>
+    /// Запускает сценарий настройки уведомления о дедлайне.
+    /// </summary>
+    private void StartTaskDeadlineReminderScenario(long chatId, User admin)
+    {
+        if (!CheckAdministratorRole(chatId, admin))
+        {
+            return;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.TaskDeadlineReminder));
+        var result = scenario.Start(chatId, admin);
+        Send(chatId, result.Message, result.Keyboard);
+    }
+
+    /// <summary>
+    /// Запускает сценарий настройки времени напоминания об отчете.
+    /// </summary>
+    private void StartDailyReportReminderScenario(long chatId, User admin)
+    {
+        if (!CheckAdministratorRole(chatId, admin))
+        {
+            return;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.DailyReportReminder));
+        var result = scenario.Start(chatId, admin);
+        Send(chatId, result.Message, result.Keyboard);
+    }
+
+    /// <summary>
     /// Назначает пользователю роль lead.
     /// </summary>
     private void SetLead(long chatId, User admin, string value)
@@ -1078,11 +1142,13 @@ public class UpdateHandler
             return;
         }
 
-        var lines = settings
-            .OrderBy(setting => setting.Key)
-            .Select(setting => $"{setting.Key}: {setting.Value}");
+        var reportReminderTime = settings.GetValueOrDefault("daily_report_reminder_time", "не задано");
+        var taskDeadlineReminderHours = settings.GetValueOrDefault("task_deadline_reminder_hours", "не задано");
 
-        Send(chatId, "Настройки бота:\n" + string.Join('\n', lines));
+        Send(chatId,
+            "Настройки бота:\n" +
+            $"Напоминание об отчете: {reportReminderTime}\n" +
+            $"Напоминание о дедлайне задачи: за {taskDeadlineReminderHours} ч.");
     }
 
     /// <summary>
@@ -1095,14 +1161,8 @@ public class UpdateHandler
             return;
         }
 
-        if (!int.TryParse(value.Trim(), out var hours) || hours < 0)
-        {
-            Send(chatId, "Укажите количество часов. Пример:\n/set_task_deadline_reminder 24");
-            return;
-        }
-
-        _botSettingsRepository.SetValue("task_deadline_reminder_hours", hours.ToString());
-        Send(chatId, $"Уведомление о дедлайне будет отправляться за {hours} часов.");
+        _botSettingsService.SetTaskDeadlineReminderHours(admin, value);
+        Send(chatId, "Настройка уведомления сохранены");
     }
 
     /// <summary>
