@@ -16,4 +16,9 @@ public class ScenarioResult
     /// Клавиатура, которую нужно показать пользователю.
     /// </summary>
     public ReplyMarkup? Keyboard { get; set; }
+
+    /// <summary>
+    /// Показывает, что сообщение нужно изменить, а не отправлять новое.
+    /// </summary>
+    public bool EditCurrentMessage { get; set; }
 }

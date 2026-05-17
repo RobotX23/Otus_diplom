@@ -101,6 +101,17 @@ public class AddEmployeeScenario : IScenario
     }
 
     /// <summary>
+    /// Обрабатывает callback от inline-кнопки внутри сценария.
+    /// </summary>
+    public ScenarioResult HandleCallback(ScenarioContext context, User user, string callbackData)
+    {
+        return new ScenarioResult
+        {
+            Message = "Для этого сценария используйте обычные кнопки Да или Нет."
+        };
+    }
+
+    /// <summary>
     /// Приводит username Telegram к единому виду.
     /// </summary>
     private static string NormalizeTelegramUsername(string text)

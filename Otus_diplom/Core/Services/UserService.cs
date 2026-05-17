@@ -54,6 +54,49 @@ public class UserService : IUserService
     }
 
     /// <summary>
+    /// Возвращает сотрудников, которых можно назначить lead.
+    /// </summary>
+    public List<User> GetLeadCandidates(User admin)
+    {
+        if (admin.Role != UserRole.Administrator)
+        {
+            throw new DomainException("Команда доступна только администратору.");
+        }
+
+        return _userRepository.GetAll()
+            .Where(user => user.Role == UserRole.Employee)
+            .OrderBy(user => user.FullName)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Назначает выбранного сотрудника lead.
+    /// </summary>
+    public User AssignLead(User admin, int userId)
+    {
+        if (admin.Role != UserRole.Administrator)
+        {
+            throw new DomainException("Команда доступна только администратору.");
+        }
+
+        var selectedUser = _userRepository.GetById(userId);
+        if (selectedUser is null || selectedUser.Role != UserRole.Employee)
+        {
+            throw new DomainException("Сотрудник для назначения lead не найден.");
+        }
+
+        foreach (var user in _userRepository.GetAll().Where(user => user.Role == UserRole.Lead))
+        {
+            user.Role = UserRole.Employee;
+            _userRepository.Save(user);
+        }
+
+        selectedUser.Role = UserRole.Lead;
+        _userRepository.Save(selectedUser);
+        return selectedUser;
+    }
+
+    /// <summary>
     /// Привязывает chat id Telegram к пользователю, найденному по username.
     /// </summary>
     public User? AttachTelegramChatId(string? telegramUsername, long chatId)

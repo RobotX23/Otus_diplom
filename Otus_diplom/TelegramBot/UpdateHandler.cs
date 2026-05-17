@@ -67,6 +67,50 @@ public class UpdateHandler
     }
 
     /// <summary>
+    /// Обрабатывает callback от inline-кнопки Telegram.
+    /// </summary>
+    public void HandleCallbackQuery(
+        long chatId,
+        int messageId,
+        string callbackQueryId,
+        string callbackData,
+        string? telegramUsername = null)
+    {
+        try
+        {
+            _messageSender.AnswerCallback(callbackQueryId);
+
+            var user = GetCurrentUser(chatId, telegramUsername);
+            if (user is null)
+            {
+                Edit(chatId, messageId, "Пользователь не найден. Обратитесь к администратору.");
+                return;
+            }
+
+            var context = _scenarioContextRepository.GetByChatId(chatId);
+            if (context is null)
+            {
+                Edit(chatId, messageId, "Команда устарела. Запустите действие заново.");
+                return;
+            }
+
+            var scenario = _scenarios.First(item => item.CanHandle(context.ScenarioType));
+            var result = scenario.HandleCallback(context, user, callbackData);
+            Edit(chatId, messageId, result.Message, result.Keyboard as InlineKeyboardMarkup);
+        }
+        catch (DomainException exception)
+        {
+            Console.WriteLine($"Ошибка бизнес-логики: {exception.Message}");
+            Edit(chatId, messageId, exception.Message);
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine($"Ошибка обработки callback: {exception}");
+            Edit(chatId, messageId, "Произошла ошибка при обработке кнопки.");
+        }
+    }
+
+    /// <summary>
     /// Выполняет основную обработку команды.
     /// </summary>
     private void HandleTextMessageInternal(long chatId, string text, string? telegramUsername)
@@ -101,6 +145,22 @@ public class UpdateHandler
         if (user is null)
         {
             Send(chatId, "Пользователь не найден. Обратитесь к администратору.");
+            return;
+        }
+
+        if (commandText.Equals("/set_lead", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Equals("Назначить lead", StringComparison.CurrentCultureIgnoreCase))
+        {
+            _scenarioContextRepository.Delete(chatId);
+            StartAssignLeadScenario(chatId, user);
+            return;
+        }
+
+        if (commandText.Equals("/add_employee", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Equals("Добавить сотрудника", StringComparison.CurrentCultureIgnoreCase))
+        {
+            _scenarioContextRepository.Delete(chatId);
+            StartAddEmployeeScenario(chatId, user);
             return;
         }
 
@@ -178,6 +238,10 @@ public class UpdateHandler
                  commandText.StartsWith("/add_employee ", StringComparison.OrdinalIgnoreCase))
         {
             StartAddEmployeeScenario(chatId, user);
+        }
+        else if (commandText.Equals("/set_lead", StringComparison.OrdinalIgnoreCase))
+        {
+            StartAssignLeadScenario(chatId, user);
         }
         else if (commandText.StartsWith("/set_lead ", StringComparison.OrdinalIgnoreCase))
         {
@@ -336,7 +400,7 @@ public class UpdateHandler
                 StartAddEmployeeScenario(chatId, user);
                 return true;
             case "Назначить lead" when user.Role == UserRole.Administrator:
-                Send(chatId, "Чтобы назначить роль lead, отправьте:\n/set_lead Иван Иванов");
+                StartAssignLeadScenario(chatId, user);
                 return true;
             case "Удалить пользователя" when user.Role == UserRole.Administrator:
                 Send(chatId, "Чтобы удалить пользователя, отправьте:\n/remove_user Иван Иванов");
@@ -894,6 +958,21 @@ public class UpdateHandler
     }
 
     /// <summary>
+    /// Запускает сценарий назначения lead.
+    /// </summary>
+    private void StartAssignLeadScenario(long chatId, User admin)
+    {
+        if (!CheckAdministratorRole(chatId, admin))
+        {
+            return;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.AssignLead));
+        var result = scenario.Start(chatId, admin);
+        Send(chatId, result.Message, result.Keyboard);
+    }
+
+    /// <summary>
     /// Назначает пользователю роль lead.
     /// </summary>
     private void SetLead(long chatId, User admin, string value)
@@ -910,9 +989,8 @@ public class UpdateHandler
             return;
         }
 
-        user.Role = UserRole.Lead;
-        _userRepository.Save(user);
-        Send(chatId, $"Пользователю {user.FullName} назначена роль lead.");
+        var lead = _userService.AssignLead(admin, user.Id);
+        Send(chatId, $"lead {lead.FullName} назначен.");
     }
 
     /// <summary>
@@ -1222,6 +1300,21 @@ public class UpdateHandler
         catch (Exception exception)
         {
             Console.WriteLine($"Ошибка отправки сообщения в Telegram: {exception}");
+        }
+    }
+
+    /// <summary>
+    /// Изменяет сообщение Telegram.
+    /// </summary>
+    private void Edit(long chatId, int messageId, string text, InlineKeyboardMarkup? keyboard = null)
+    {
+        try
+        {
+            _messageSender.EditMessage(chatId, messageId, text, keyboard);
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine($"Ошибка изменения сообщения в Telegram: {exception}");
         }
     }
 }

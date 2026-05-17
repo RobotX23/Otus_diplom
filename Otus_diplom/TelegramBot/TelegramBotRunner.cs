@@ -31,7 +31,7 @@ public class TelegramBotRunner
 
         var receiverOptions = new ReceiverOptions
         {
-            AllowedUpdates = [UpdateType.Message]
+            AllowedUpdates = [UpdateType.Message, UpdateType.CallbackQuery]
         };
 
         _botClient.StartReceiving(
@@ -100,6 +100,17 @@ public class TelegramBotRunner
             if (update.Message?.Text is not null)
             {
                 _updateHandler.HandleTextMessage(update.Message.Chat.Id, update.Message.Text, update.Message.From?.Username);
+                return Task.CompletedTask;
+            }
+
+            if (update.CallbackQuery?.Message is not null && update.CallbackQuery.Data is not null)
+            {
+                _updateHandler.HandleCallbackQuery(
+                    update.CallbackQuery.Message.Chat.Id,
+                    update.CallbackQuery.Message.MessageId,
+                    update.CallbackQuery.Id,
+                    update.CallbackQuery.Data,
+                    update.CallbackQuery.From.Username);
                 return Task.CompletedTask;
             }
 

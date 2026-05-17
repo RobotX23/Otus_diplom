@@ -13,6 +13,16 @@ public interface IUserService
     User AddEmployeeByTelegramUsername(User admin, string telegramUsername);
 
     /// <summary>
+    /// Возвращает сотрудников, которых можно назначить lead.
+    /// </summary>
+    List<User> GetLeadCandidates(User admin);
+
+    /// <summary>
+    /// Назначает выбранного сотрудника lead.
+    /// </summary>
+    User AssignLead(User admin, int userId);
+
+    /// <summary>
     /// Привязывает chat id Telegram к пользователю, найденному по username.
     /// </summary>
     User? AttachTelegramChatId(string? telegramUsername, long chatId);

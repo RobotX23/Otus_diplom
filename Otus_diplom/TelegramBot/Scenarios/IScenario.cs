@@ -21,4 +21,9 @@ public interface IScenario
     /// Обрабатывает сообщение пользователя внутри сценария.
     /// </summary>
     ScenarioResult HandleMessage(ScenarioContext context, User user, string text);
+
+    /// <summary>
+    /// Обрабатывает callback от inline-кнопки внутри сценария.
+    /// </summary>
+    ScenarioResult HandleCallback(ScenarioContext context, User user, string callbackData);
 }

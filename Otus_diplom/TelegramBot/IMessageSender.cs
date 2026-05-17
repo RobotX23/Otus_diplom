@@ -11,4 +11,14 @@ public interface IMessageSender
     /// Отправляет сообщение пользователю.
     /// </summary>
     void SendMessage(long chatId, string text, ReplyMarkup? keyboard = null);
+
+    /// <summary>
+    /// Изменяет ранее отправленное сообщение с inline-кнопками.
+    /// </summary>
+    void EditMessage(long chatId, int messageId, string text, InlineKeyboardMarkup? keyboard = null);
+
+    /// <summary>
+    /// Отвечает на callback от inline-кнопки.
+    /// </summary>
+    void AnswerCallback(string callbackQueryId);
 }

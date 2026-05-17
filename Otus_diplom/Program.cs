@@ -39,7 +39,8 @@ try
     IScenarioContextRepository scenarioContextRepository = new InMemoryScenarioContextRepository();
     var scenarios = new List<IScenario>
     {
-        new AddEmployeeScenario(userService, scenarioContextRepository)
+        new AddEmployeeScenario(userService, scenarioContextRepository),
+        new AssignLeadScenario(userService, scenarioContextRepository)
     };
 
     var updateHandler = new UpdateHandler(
