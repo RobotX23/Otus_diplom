@@ -18,6 +18,7 @@ public static class ModelMapper
         {
             Id = model.Id,
             TelegramChatId = model.TelegramChatId,
+            TelegramUsername = model.TelegramUsername,
             FullName = model.FullName,
             Role = Enum.Parse<UserRole>(model.Role)
         };
@@ -32,6 +33,7 @@ public static class ModelMapper
         {
             Id = user.Id,
             TelegramChatId = user.TelegramChatId,
+            TelegramUsername = user.TelegramUsername,
             FullName = user.FullName,
             Role = user.Role.ToString()
         };

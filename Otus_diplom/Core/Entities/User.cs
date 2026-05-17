@@ -13,7 +13,12 @@ public class User
     /// <summary>
     /// Идентификатор чата Telegram.
     /// </summary>
-    public long TelegramChatId { get; set; }
+    public long? TelegramChatId { get; set; }
+
+    /// <summary>
+    /// Username пользователя в Telegram без символа @.
+    /// </summary>
+    public string TelegramUsername { get; set; } = string.Empty;
 
     /// <summary>
     /// Имя пользователя, которое вводится в командах.

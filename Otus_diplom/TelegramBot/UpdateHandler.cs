@@ -2,6 +2,7 @@ using Otus_diplom.Core.DataAccess;
 using Otus_diplom.Core.Entities;
 using Otus_diplom.Core.Exceptions;
 using Otus_diplom.Core.Services;
+using Otus_diplom.TelegramBot.Scenarios;
 using Telegram.Bot.Types.ReplyMarkups;
 using TaskStatus = Otus_diplom.Core.Entities.TaskStatus;
 
@@ -14,9 +15,12 @@ public class UpdateHandler
 {
     private readonly IReportService _reportService;
     private readonly ITaskService _taskService;
+    private readonly IUserService _userService;
     private readonly IUserRepository _userRepository;
     private readonly IBotSettingsRepository _botSettingsRepository;
     private readonly IMessageSender _messageSender;
+    private readonly IScenarioContextRepository _scenarioContextRepository;
+    private readonly List<IScenario> _scenarios;
 
     /// <summary>
     /// Создает обработчик Telegram-команд.
@@ -24,25 +28,31 @@ public class UpdateHandler
     public UpdateHandler(
         IReportService reportService,
         ITaskService taskService,
+        IUserService userService,
         IUserRepository userRepository,
         IBotSettingsRepository botSettingsRepository,
-        IMessageSender messageSender)
+        IMessageSender messageSender,
+        IScenarioContextRepository scenarioContextRepository,
+        List<IScenario> scenarios)
     {
         _reportService = reportService;
         _taskService = taskService;
+        _userService = userService;
         _userRepository = userRepository;
         _botSettingsRepository = botSettingsRepository;
         _messageSender = messageSender;
+        _scenarioContextRepository = scenarioContextRepository;
+        _scenarios = scenarios;
     }
 
     /// <summary>
     /// Обрабатывает входящий текст команды.
     /// </summary>
-    public void HandleTextMessage(long chatId, string text)
+    public void HandleTextMessage(long chatId, string text, string? telegramUsername = null)
     {
         try
         {
-            HandleTextMessageInternal(chatId, text);
+            HandleTextMessageInternal(chatId, text, telegramUsername);
         }
         catch (DomainException exception)
         {
@@ -59,7 +69,7 @@ public class UpdateHandler
     /// <summary>
     /// Выполняет основную обработку команды.
     /// </summary>
-    private void HandleTextMessageInternal(long chatId, string text)
+    private void HandleTextMessageInternal(long chatId, string text, string? telegramUsername)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -71,7 +81,7 @@ public class UpdateHandler
 
         if (commandText == "/start")
         {
-            SendStart(chatId);
+            SendStart(chatId, telegramUsername);
             return;
         }
 
@@ -87,10 +97,15 @@ public class UpdateHandler
             return;
         }
 
-        var user = _userRepository.GetByTelegramChatId(chatId);
+        var user = GetCurrentUser(chatId, telegramUsername);
         if (user is null)
         {
             Send(chatId, "Пользователь не найден. Обратитесь к администратору.");
+            return;
+        }
+
+        if (HandleActiveScenario(chatId, user, commandText))
+        {
             return;
         }
 
@@ -159,9 +174,10 @@ public class UpdateHandler
         {
             SendTeamTasks(chatId, user);
         }
-        else if (commandText.StartsWith("/add_employee ", StringComparison.OrdinalIgnoreCase))
+        else if (commandText.Equals("/add_employee", StringComparison.OrdinalIgnoreCase) ||
+                 commandText.StartsWith("/add_employee ", StringComparison.OrdinalIgnoreCase))
         {
-            AddEmployee(chatId, user, commandText["/add_employee ".Length..]);
+            StartAddEmployeeScenario(chatId, user);
         }
         else if (commandText.StartsWith("/set_lead ", StringComparison.OrdinalIgnoreCase))
         {
@@ -192,9 +208,9 @@ public class UpdateHandler
     /// <summary>
     /// Отправляет приветственное сообщение.
     /// </summary>
-    private void SendStart(long chatId)
+    private void SendStart(long chatId, string? telegramUsername)
     {
-        var user = _userRepository.GetByTelegramChatId(chatId);
+        var user = GetCurrentUser(chatId, telegramUsername);
         if (user is null)
         {
             Send(chatId, "Бот отчетности сотрудников запущен. Пользователь не найден. Обратитесь к администратору.");
@@ -240,8 +256,7 @@ public class UpdateHandler
             "Пример: /employee_tasks Иван Иванов\n" +
             "/team_tasks - посмотреть задачи всей группы.\n\n" +
             "Команды администратора:\n" +
-            "/add_employee имя | chat_id - добавить сотрудника.\n" +
-            "Пример: /add_employee Иван Иванов | 100001\n" +
+            "/add_employee - добавить сотрудника по username Telegram.\n" +
             "/set_lead имя - назначить пользователю роль lead.\n" +
             "Пример: /set_lead Иван Иванов\n" +
             "/remove_user имя - удалить пользователя.\n" +
@@ -318,7 +333,7 @@ public class UpdateHandler
                 Send(chatId, "Чтобы закрыть задачу, отправьте номер и комментарий:\n/close_task 1 Задача выполнена");
                 return true;
             case "Добавить сотрудника" when user.Role == UserRole.Administrator:
-                Send(chatId, "Чтобы добавить сотрудника, отправьте:\n/add_employee Иван Иванов | 100001");
+                StartAddEmployeeScenario(chatId, user);
                 return true;
             case "Назначить lead" when user.Role == UserRole.Administrator:
                 Send(chatId, "Чтобы назначить роль lead, отправьте:\n/set_lead Иван Иванов");
@@ -779,9 +794,9 @@ public class UpdateHandler
             $"Статус задачи: {GetTaskStatusName(task.Status)}.\n" +
             $"Срок: {task.Deadline:dd.MM.yyyy}.");
 
-        if (employee.TelegramChatId != 0)
+        if (employee.TelegramChatId.HasValue)
         {
-            Send(employee.TelegramChatId,
+            Send(employee.TelegramChatId.Value,
                 "Вам назначена новая задача:\n" +
                 $"{task.Title}\n" +
                 $"Срок: {task.Deadline:dd.MM.yyyy}\n" +
@@ -845,41 +860,37 @@ public class UpdateHandler
     /// <summary>
     /// Добавляет сотрудника через команду администратора.
     /// </summary>
-    private void AddEmployee(long chatId, User admin, string value)
+    /// <summary>
+    /// Запускает сценарий добавления нового сотрудника администратором.
+    /// </summary>
+    /// <summary>
+    /// Передает сообщение в активный сценарий пользователя.
+    /// </summary>
+    private bool HandleActiveScenario(long chatId, User user, string text)
+    {
+        var context = _scenarioContextRepository.GetByChatId(chatId);
+        if (context is null)
+        {
+            return false;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(context.ScenarioType));
+        var result = scenario.HandleMessage(context, user, text);
+        var keyboard = result.Keyboard ?? CreateAdministratorKeyboard();
+        Send(chatId, result.Message, keyboard);
+        return true;
+    }
+
+    private void StartAddEmployeeScenario(long chatId, User admin)
     {
         if (!CheckAdministratorRole(chatId, admin))
         {
             return;
         }
 
-        var parts = value.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length != 2 || !long.TryParse(parts[1], out var telegramChatId))
-        {
-            Send(chatId, "Используйте формат:\n/add_employee Иван Иванов | 100001");
-            return;
-        }
-
-        if (_userRepository.GetByFullName(parts[0]) is not null)
-        {
-            Send(chatId, "Пользователь с таким именем уже существует.");
-            return;
-        }
-
-        if (_userRepository.GetByTelegramChatId(telegramChatId) is not null)
-        {
-            Send(chatId, "Пользователь с таким Telegram chat id уже существует.");
-            return;
-        }
-
-        var employee = new User
-        {
-            FullName = parts[0],
-            TelegramChatId = telegramChatId,
-            Role = UserRole.Employee
-        };
-
-        _userRepository.Add(employee);
-        Send(chatId, $"Сотрудник {employee.FullName} добавлен.");
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.AddEmployee));
+        var result = scenario.Start(chatId, admin);
+        Send(chatId, result.Message, result.Keyboard);
     }
 
     /// <summary>
@@ -945,7 +956,7 @@ public class UpdateHandler
 
         var lines = _userRepository.GetAll()
             .OrderBy(user => user.Id)
-            .Select(user => $"{user.Id}. {user.FullName} - {GetRoleName(user.Role)} - chat id: {user.TelegramChatId}")
+            .Select(user => $"{user.Id}. {user.FullName} - @{user.TelegramUsername} - {GetRoleName(user.Role)} - chat id: {FormatChatId(user.TelegramChatId)}")
             .ToList();
 
         Send(chatId, lines.Count == 0
@@ -1071,6 +1082,25 @@ public class UpdateHandler
     /// <summary>
     /// Ищет сотрудника по номеру, полному имени или части имени.
     /// </summary>
+    /// <summary>
+    /// Ищет текущего пользователя по chat id или username Telegram.
+    /// </summary>
+    private User? GetCurrentUser(long chatId, string? telegramUsername)
+    {
+        var user = _userRepository.GetByTelegramChatId(chatId);
+        if (user is not null)
+        {
+            return user;
+        }
+
+        if (string.IsNullOrWhiteSpace(telegramUsername))
+        {
+            return null;
+        }
+
+        return _userService.AttachTelegramChatId(telegramUsername, chatId);
+    }
+
     private User? FindEmployee(string value)
     {
         var normalizedValue = NormalizeText(value);
@@ -1170,6 +1200,14 @@ public class UpdateHandler
     private static string NormalizeText(string text)
     {
         return string.Join(' ', text.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    /// <summary>
+    /// Форматирует chat id для вывода администратору.
+    /// </summary>
+    private static string FormatChatId(long? telegramChatId)
+    {
+        return telegramChatId.HasValue ? telegramChatId.Value.ToString() : "не привязан";
     }
 
     /// <summary>

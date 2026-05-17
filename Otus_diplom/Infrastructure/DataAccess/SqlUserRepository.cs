@@ -61,6 +61,17 @@ public class SqlUserRepository : IUserRepository
     }
 
     /// <summary>
+    /// Ищет пользователя по username Telegram.
+    /// </summary>
+    public User? GetByTelegramUsername(string telegramUsername)
+    {
+        using var db = _dataContextFactory.CreateDataContext();
+        var normalizedUsername = NormalizeTelegramUsername(telegramUsername);
+        var model = db.Users.FirstOrDefault(user => user.TelegramUsername == normalizedUsername);
+        return model is null ? null : ModelMapper.ToEntity(model);
+    }
+
+    /// <summary>
     /// Ищет пользователя по полному имени.
     /// </summary>
     public User? GetByFullName(string fullName)
@@ -93,6 +104,7 @@ public class SqlUserRepository : IUserRepository
         db.Users
             .Where(item => item.Id == user.Id)
             .Set(item => item.TelegramChatId, model.TelegramChatId)
+            .Set(item => item.TelegramUsername, model.TelegramUsername)
             .Set(item => item.FullName, model.FullName)
             .Set(item => item.Role, model.Role)
             .Update();
@@ -107,5 +119,13 @@ public class SqlUserRepository : IUserRepository
         return db.Users
             .Where(user => user.Id == id)
             .Delete() > 0;
+    }
+
+    /// <summary>
+    /// Приводит username Telegram к единому виду.
+    /// </summary>
+    private static string NormalizeTelegramUsername(string telegramUsername)
+    {
+        return telegramUsername.Trim().TrimStart('@');
     }
 }

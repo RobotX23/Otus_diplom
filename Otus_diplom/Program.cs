@@ -2,6 +2,7 @@ using Otus_diplom.Core.DataAccess;
 using Otus_diplom.Core.Services;
 using Otus_diplom.Infrastructure.DataAccess;
 using Otus_diplom.TelegramBot;
+using Otus_diplom.TelegramBot.Scenarios;
 using Telegram.Bot;
 
 try
@@ -33,9 +34,23 @@ try
 
     var reportService = new ReportService(reportRepository, maxCompletedTaskLength);
     var taskService = new TaskService(taskRepository, maxTaskTitleLength);
+    IUserService userService = new UserService(userRepository);
     IMessageSender messageSender = new TelegramApiMessageSender(botClient);
+    IScenarioContextRepository scenarioContextRepository = new InMemoryScenarioContextRepository();
+    var scenarios = new List<IScenario>
+    {
+        new AddEmployeeScenario(userService, scenarioContextRepository)
+    };
 
-    var updateHandler = new UpdateHandler(reportService, taskService, userRepository, botSettingsRepository, messageSender);
+    var updateHandler = new UpdateHandler(
+        reportService,
+        taskService,
+        userService,
+        userRepository,
+        botSettingsRepository,
+        messageSender,
+        scenarioContextRepository,
+        scenarios);
     var botRunner = new TelegramBotRunner(botClient, updateHandler);
 
     using var cancellationTokenSource = new CancellationTokenSource();

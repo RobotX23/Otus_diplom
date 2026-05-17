@@ -1,9 +1,9 @@
-insert into users (telegram_chat_id, full_name, role)
+insert into users (telegram_chat_id, telegram_username, full_name, role)
 values
-    (100001, 'Иван Иванов', 'Employee'),
-    (100002, 'Петр Петров', 'Employee'),
-    (200001, 'Анна Lead', 'Lead'),
-    (300001, 'Администратор', 'Administrator')
+    (100001, 'ivan_ivanov', 'Иван Иванов', 'Employee'),
+    (100002, 'petr_petrov', 'Петр Петров', 'Employee'),
+    (200001, 'anna_lead', 'Анна Lead', 'Lead'),
+    (300001, 'admin', 'Администратор', 'Administrator')
 on conflict (telegram_chat_id) do nothing;
 
 insert into daily_reports (employee_id, report_date, is_sent)

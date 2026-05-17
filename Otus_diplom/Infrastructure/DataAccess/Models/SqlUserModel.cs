@@ -20,7 +20,13 @@ public class SqlUserModel
     /// Идентификатор чата Telegram.
     /// </summary>
     [Column(Name = "telegram_chat_id")]
-    public long TelegramChatId { get; set; }
+    public long? TelegramChatId { get; set; }
+
+    /// <summary>
+    /// Username пользователя в Telegram.
+    /// </summary>
+    [Column(Name = "telegram_username")]
+    public string TelegramUsername { get; set; } = string.Empty;
 
     /// <summary>
     /// Имя пользователя.

@@ -1,6 +1,7 @@
 create table if not exists users (
     id integer generated always as identity primary key,
-    telegram_chat_id bigint not null unique,
+    telegram_chat_id bigint null unique,
+    telegram_username varchar(100) not null unique,
     full_name varchar(200) not null,
     role varchar(50) not null,
     created_at timestamp not null default current_timestamp,

@@ -99,7 +99,7 @@ public class TelegramBotRunner
         {
             if (update.Message?.Text is not null)
             {
-                _updateHandler.HandleTextMessage(update.Message.Chat.Id, update.Message.Text);
+                _updateHandler.HandleTextMessage(update.Message.Chat.Id, update.Message.Text, update.Message.From?.Username);
                 return Task.CompletedTask;
             }
 

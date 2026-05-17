@@ -28,6 +28,11 @@ public interface IUserRepository
     User? GetByTelegramChatId(long telegramChatId);
 
     /// <summary>
+    /// Ищет пользователя по username Telegram.
+    /// </summary>
+    User? GetByTelegramUsername(string telegramUsername);
+
+    /// <summary>
     /// Ищет пользователя по имени.
     /// </summary>
     User? GetByFullName(string fullName);
