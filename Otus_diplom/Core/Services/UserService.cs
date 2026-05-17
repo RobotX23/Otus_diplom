@@ -22,7 +22,7 @@ public class UserService : IUserService
     /// <summary>
     /// Добавляет нового сотрудника по username Telegram.
     /// </summary>
-    public User AddEmployeeByTelegramUsername(User admin, string telegramUsername)
+    public User AddEmployee(User admin, string telegramUsername, string fullName)
     {
         if (admin.Role != UserRole.Administrator)
         {
@@ -41,9 +41,20 @@ public class UserService : IUserService
             throw new DomainException("Пользователь с таким username уже существует.");
         }
 
+        var normalizedFullName = NormalizeFullName(fullName);
+        if (string.IsNullOrWhiteSpace(normalizedFullName))
+        {
+            throw new DomainException("Введите ФИО сотрудника.");
+        }
+
+        if (_userRepository.GetByFullName(normalizedFullName) is not null)
+        {
+            throw new DomainException("Пользователь с таким ФИО уже существует.");
+        }
+
         var employee = new User
         {
-            FullName = normalizedUsername,
+            FullName = normalizedFullName,
             TelegramUsername = normalizedUsername,
             TelegramChatId = null,
             Role = UserRole.Employee
@@ -163,5 +174,13 @@ public class UserService : IUserService
     private static string NormalizeTelegramUsername(string telegramUsername)
     {
         return telegramUsername.Trim().TrimStart('@');
+    }
+
+    /// <summary>
+    /// Убирает лишние пробелы из ФИО сотрудника.
+    /// </summary>
+    private static string NormalizeFullName(string fullName)
+    {
+        return string.Join(' ', fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
     }
 }

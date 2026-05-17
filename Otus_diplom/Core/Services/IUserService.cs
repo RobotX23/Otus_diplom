@@ -10,7 +10,7 @@ public interface IUserService
     /// <summary>
     /// Добавляет нового сотрудника по username Telegram.
     /// </summary>
-    User AddEmployeeByTelegramUsername(User admin, string telegramUsername);
+    User AddEmployee(User admin, string telegramUsername, string fullName);
 
     /// <summary>
     /// Возвращает сотрудников, которых можно назначить lead.

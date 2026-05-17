@@ -10,8 +10,10 @@ namespace Otus_diplom.TelegramBot.Scenarios;
 public class AddEmployeeScenario : IScenario
 {
     private const string WaitUsernameStep = "WaitUsername";
+    private const string WaitFullNameStep = "WaitFullName";
     private const string WaitConfirmationStep = "WaitConfirmation";
     private const string UsernameKey = "TelegramUsername";
+    private const string FullNameKey = "FullName";
 
     private readonly IUserService _userService;
     private readonly IScenarioContextRepository _contextRepository;
@@ -62,6 +64,18 @@ public class AddEmployeeScenario : IScenario
         {
             var telegramUsername = NormalizeTelegramUsername(text);
             context.Data[UsernameKey] = telegramUsername;
+            context.Step = WaitFullNameStep;
+            _contextRepository.Save(context);
+
+            return new ScenarioResult
+            {
+                Message = "Введите ФИО сотрудника"
+            };
+        }
+
+        if (context.Step == WaitFullNameStep)
+        {
+            context.Data[FullNameKey] = NormalizeFullName(text);
             context.Step = WaitConfirmationStep;
             _contextRepository.Save(context);
 
@@ -74,7 +88,7 @@ public class AddEmployeeScenario : IScenario
 
         if (context.Step == WaitConfirmationStep && text.Equals("Да", StringComparison.CurrentCultureIgnoreCase))
         {
-            var employee = _userService.AddEmployeeByTelegramUsername(user, context.Data[UsernameKey]);
+            var employee = _userService.AddEmployee(user, context.Data[UsernameKey], context.Data[FullNameKey]);
             _contextRepository.Delete(context.ChatId);
 
             return new ScenarioResult
@@ -117,6 +131,14 @@ public class AddEmployeeScenario : IScenario
     private static string NormalizeTelegramUsername(string text)
     {
         return text.Trim().TrimStart('@');
+    }
+
+    /// <summary>
+    /// Убирает лишние пробелы из ФИО сотрудника.
+    /// </summary>
+    private static string NormalizeFullName(string text)
+    {
+        return string.Join(' ', text.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
     }
 
     /// <summary>
