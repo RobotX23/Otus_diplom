@@ -18,6 +18,16 @@ public interface IReportService
     void AddCompletedTask(User employee, string text);
 
     /// <summary>
+    /// Удаляет выполненную задачу из сегодняшнего отчета.
+    /// </summary>
+    bool RemoveCompletedTask(User employee, int taskIndex);
+
+    /// <summary>
+    /// Удаляет проблему из сегодняшнего отчета.
+    /// </summary>
+    bool RemoveBlock(User employee, int blockIndex);
+
+    /// <summary>
     /// Добавляет проблему или блокер в сегодняшний отчет.
     /// </summary>
     void AddBlock(User employee, string text);

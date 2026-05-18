@@ -40,8 +40,42 @@ public class ReportService : IReportService
         ValidateCompletedTaskText(text);
 
         var report = GetOrCreateTodayReport(employee);
+        ValidateReportIsNotSent(report);
+
         report.CompletedTasks.Add(text);
         _reportRepository.Save(report);
+    }
+
+    /// <summary>
+    /// Удаляет выполненную задачу из сегодняшнего отчета, если отчет еще не отправлен.
+    /// </summary>
+    public bool RemoveCompletedTask(User employee, int taskIndex)
+    {
+        var report = GetTodayReport(employee);
+        if (report is null || report.IsSent || taskIndex < 0 || taskIndex >= report.CompletedTasks.Count)
+        {
+            return false;
+        }
+
+        report.CompletedTasks.RemoveAt(taskIndex);
+        _reportRepository.Save(report);
+        return true;
+    }
+
+    /// <summary>
+    /// Удаляет проблему из сегодняшнего отчета, если отчет еще не отправлен.
+    /// </summary>
+    public bool RemoveBlock(User employee, int blockIndex)
+    {
+        var report = GetTodayReport(employee);
+        if (report is null || report.IsSent || blockIndex < 0 || blockIndex >= report.Blocks.Count)
+        {
+            return false;
+        }
+
+        report.Blocks.RemoveAt(blockIndex);
+        _reportRepository.Save(report);
+        return true;
     }
 
     /// <summary>
@@ -50,6 +84,8 @@ public class ReportService : IReportService
     public void AddBlock(User employee, string text)
     {
         var report = GetOrCreateTodayReport(employee);
+        ValidateReportIsNotSent(report);
+
         report.Blocks.Add(text);
         _reportRepository.Save(report);
     }
@@ -108,6 +144,17 @@ public class ReportService : IReportService
         if (text.Length > _maxCompletedTaskLength)
         {
             throw new DomainException($"Текст выполненной задачи не должен быть длиннее {_maxCompletedTaskLength} символов.");
+        }
+    }
+
+    /// <summary>
+    /// Проверяет, что отчет еще не отправлен.
+    /// </summary>
+    private static void ValidateReportIsNotSent(DailyReport report)
+    {
+        if (report.IsSent)
+        {
+            throw new DomainException("Отчет за сегодня уже отправлен. Добавлять задачи и проблемы больше нельзя.");
         }
     }
 }

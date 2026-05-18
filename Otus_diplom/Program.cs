@@ -46,7 +46,9 @@ try
         new TaskDeadlineReminderScenario(botSettingsService, scenarioContextRepository),
         new DailyReportReminderScenario(botSettingsService, scenarioContextRepository),
         new AddCompletedTaskScenario(reportService, scenarioContextRepository),
-        new MyTasksScenario(taskService, scenarioContextRepository)
+        new AddBlockScenario(reportService, scenarioContextRepository),
+        new MyTasksScenario(taskService, scenarioContextRepository),
+        new LastReportScenario(reportService, scenarioContextRepository)
     };
 
     var updateHandler = new UpdateHandler(

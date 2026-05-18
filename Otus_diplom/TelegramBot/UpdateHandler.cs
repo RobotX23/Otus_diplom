@@ -132,13 +132,15 @@ public class UpdateHandler
             return;
         }
 
-        if (commandText == "/help")
+        if (commandText.Equals("/help", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Equals("Помощь", StringComparison.CurrentCultureIgnoreCase))
         {
             SendHelp(chatId);
             return;
         }
 
-        if (commandText == "/info")
+        if (commandText.Equals("/info", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Equals("О программе", StringComparison.CurrentCultureIgnoreCase))
         {
             SendInfo(chatId);
             return;
@@ -199,6 +201,14 @@ public class UpdateHandler
             return;
         }
 
+        if (commandText.Equals("/block", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Equals("Добавить проблему", StringComparison.CurrentCultureIgnoreCase))
+        {
+            _scenarioContextRepository.Delete(chatId);
+            StartAddBlockScenario(chatId, user);
+            return;
+        }
+
         if (commandText.Equals("/my_tasks", StringComparison.OrdinalIgnoreCase) ||
             commandText.Equals("Мои задачи", StringComparison.CurrentCultureIgnoreCase))
         {
@@ -211,7 +221,7 @@ public class UpdateHandler
             commandText.Equals("Последний отчет", StringComparison.CurrentCultureIgnoreCase))
         {
             _scenarioContextRepository.Delete(chatId);
-            SendMyLastReport(chatId, user);
+            StartLastReportScenario(chatId, user);
             return;
         }
 
@@ -247,7 +257,7 @@ public class UpdateHandler
         }
         else if (commandText == "/my_last_report")
         {
-            SendMyLastReport(chatId, user);
+            StartLastReportScenario(chatId, user);
         }
         else if (commandText == "/my_tasks")
         {
@@ -453,10 +463,10 @@ public class UpdateHandler
                 StartAddCompletedTaskScenario(chatId, user);
                 return true;
             case "Добавить проблему" when user.Role == UserRole.Employee:
-                Send(chatId, "Чтобы добавить проблему или блокер, отправьте:\n/block Нет доступа к базе данных");
+                StartAddBlockScenario(chatId, user);
                 return true;
             case "Последний отчет" when user.Role == UserRole.Employee:
-                SendMyLastReport(chatId, user);
+                StartLastReportScenario(chatId, user);
                 return true;
             case "Мои задачи" when user.Role == UserRole.Employee:
                 StartMyTasksScenario(chatId, user);
@@ -1114,6 +1124,21 @@ public class UpdateHandler
     }
 
     /// <summary>
+    /// Запускает сценарий добавления проблемы в отчет.
+    /// </summary>
+    private void StartAddBlockScenario(long chatId, User employee)
+    {
+        if (!CheckEmployeeRole(chatId, employee))
+        {
+            return;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.AddBlock));
+        var result = scenario.Start(chatId, employee);
+        Send(chatId, result.Message, result.Keyboard);
+    }
+
+    /// <summary>
     /// Запускает сценарий просмотра задач сотрудника.
     /// </summary>
     private void StartMyTasksScenario(long chatId, User employee)
@@ -1124,6 +1149,21 @@ public class UpdateHandler
         }
 
         var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.MyTasks));
+        var result = scenario.Start(chatId, employee);
+        Send(chatId, result.Message, result.Keyboard);
+    }
+
+    /// <summary>
+    /// Запускает сценарий просмотра последнего отчета.
+    /// </summary>
+    private void StartLastReportScenario(long chatId, User employee)
+    {
+        if (!CheckEmployeeRole(chatId, employee))
+        {
+            return;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.LastReport));
         var result = scenario.Start(chatId, employee);
         Send(chatId, result.Message, result.Keyboard);
     }

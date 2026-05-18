@@ -38,5 +38,15 @@ public enum ScenarioType
     /// <summary>
     /// Сценарий просмотра и изменения задач сотрудника.
     /// </summary>
-    MyTasks
+    MyTasks,
+
+    /// <summary>
+    /// Сценарий просмотра последнего отчета сотрудника.
+    /// </summary>
+    LastReport,
+
+    /// <summary>
+    /// Сценарий добавления проблемы в отчет.
+    /// </summary>
+    AddBlock
 }

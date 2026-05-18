@@ -5,21 +5,21 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace Otus_diplom.TelegramBot.Scenarios;
 
 /// <summary>
-/// Сценарий добавления выполненной задачи в отчет сотрудника.
+/// Сценарий добавления проблемы в отчет сотрудника.
 /// </summary>
-public class AddCompletedTaskScenario : IScenario
+public class AddBlockScenario : IScenario
 {
-    private const string WaitTaskTextStep = "WaitTaskText";
+    private const string WaitBlockTextStep = "WaitBlockText";
     private const string WaitConfirmationStep = "WaitConfirmation";
-    private const string TaskTextKey = "TaskText";
+    private const string BlockTextKey = "BlockText";
 
     private readonly IReportService _reportService;
     private readonly IScenarioContextRepository _contextRepository;
 
     /// <summary>
-    /// Создает сценарий добавления выполненной задачи.
+    /// Создает сценарий добавления проблемы.
     /// </summary>
-    public AddCompletedTaskScenario(IReportService reportService, IScenarioContextRepository contextRepository)
+    public AddBlockScenario(IReportService reportService, IScenarioContextRepository contextRepository)
     {
         _reportService = reportService;
         _contextRepository = contextRepository;
@@ -30,11 +30,11 @@ public class AddCompletedTaskScenario : IScenario
     /// </summary>
     public bool CanHandle(ScenarioType scenarioType)
     {
-        return scenarioType == ScenarioType.AddCompletedTask;
+        return scenarioType == ScenarioType.AddBlock;
     }
 
     /// <summary>
-    /// Запускает сценарий добавления выполненной задачи.
+    /// Запускает сценарий добавления проблемы.
     /// </summary>
     public ScenarioResult Start(long chatId, User user)
     {
@@ -52,14 +52,14 @@ public class AddCompletedTaskScenario : IScenario
         {
             ChatId = chatId,
             UserId = user.Id,
-            ScenarioType = ScenarioType.AddCompletedTask,
-            Step = WaitTaskTextStep
+            ScenarioType = ScenarioType.AddBlock,
+            Step = WaitBlockTextStep
         };
 
         _contextRepository.Save(context);
         return new ScenarioResult
         {
-            Message = "Введите выполненную задачу."
+            Message = "Введите проблему или блокер."
         };
     }
 
@@ -68,27 +68,27 @@ public class AddCompletedTaskScenario : IScenario
     /// </summary>
     public ScenarioResult HandleMessage(ScenarioContext context, User user, string text)
     {
-        if (context.Step == WaitTaskTextStep)
+        if (context.Step == WaitBlockTextStep)
         {
-            context.Data[TaskTextKey] = text.Trim();
+            context.Data[BlockTextKey] = text.Trim();
             context.Step = WaitConfirmationStep;
             _contextRepository.Save(context);
 
             return new ScenarioResult
             {
-                Message = "Сохранить задачу в отчет?",
+                Message = "Сохранить проблему в отчет?",
                 Keyboard = CreateYesNoKeyboard()
             };
         }
 
         if (context.Step == WaitConfirmationStep && text.Equals("Да", StringComparison.CurrentCultureIgnoreCase))
         {
-            _reportService.AddCompletedTask(user, context.Data[TaskTextKey]);
+            _reportService.AddBlock(user, context.Data[BlockTextKey]);
             _contextRepository.Delete(context.ChatId);
 
             return new ScenarioResult
             {
-                Message = "Задача добавлена в отчет"
+                Message = "Проблема добавлена в отчет"
             };
         }
 
@@ -98,7 +98,7 @@ public class AddCompletedTaskScenario : IScenario
 
             return new ScenarioResult
             {
-                Message = "Добавление задачи отменено"
+                Message = "Добавление проблемы отменено"
             };
         }
 
