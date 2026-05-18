@@ -65,6 +65,11 @@ try
         messageSender,
         scenarioContextRepository,
         scenarios);
+    var taskDeadlineReminderWorker = new TaskDeadlineReminderWorker(
+        taskService,
+        userRepository,
+        botSettingsRepository,
+        messageSender);
     var botRunner = new TelegramBotRunner(botClient, updateHandler);
 
     using var cancellationTokenSource = new CancellationTokenSource();
@@ -74,7 +79,9 @@ try
         cancellationTokenSource.Cancel();
     };
 
+    var taskDeadlineReminderWorkerTask = taskDeadlineReminderWorker.RunAsync(cancellationTokenSource.Token);
     await botRunner.RunAsync(cancellationTokenSource.Token);
+    await taskDeadlineReminderWorkerTask;
 }
 catch (Exception exception)
 {
