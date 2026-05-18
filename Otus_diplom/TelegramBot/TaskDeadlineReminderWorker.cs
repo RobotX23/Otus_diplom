@@ -58,14 +58,14 @@ public class TaskDeadlineReminderWorker
     /// <summary>
     /// Проверяет задачи и отправляет уведомления, если дедлайн близко.
     /// </summary>
-    private Task CheckDeadlinesAsync(CancellationToken cancellationToken)
+    private async Task CheckDeadlinesAsync(CancellationToken cancellationToken)
     {
         try
         {
             var reminderHoursText = _botSettingsRepository.GetValue(TaskDeadlineReminderHoursKey);
             if (!int.TryParse(reminderHoursText, out var reminderHours))
             {
-                return Task.CompletedTask;
+                return;
             }
 
             var now = DateTime.Now;
@@ -83,7 +83,7 @@ public class TaskDeadlineReminderWorker
                     continue;
                 }
 
-                SendReminder(task);
+                await SendReminderAsync(task);
                 _notifiedTaskIds.Add(task.Id);
             }
         }
@@ -96,7 +96,7 @@ public class TaskDeadlineReminderWorker
             Console.WriteLine($"Ошибка фоновой проверки дедлайнов задач: {exception}");
         }
 
-        return Task.CompletedTask;
+        await Task.CompletedTask;
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ public class TaskDeadlineReminderWorker
     /// <summary>
     /// Отправляет уведомление сотруднику.
     /// </summary>
-    private void SendReminder(EmployeeTask task)
+    private async Task SendReminderAsync(EmployeeTask task)
     {
         var employee = _userRepository.GetById(task.EmployeeId);
         if (employee?.TelegramChatId is null)
@@ -123,7 +123,7 @@ public class TaskDeadlineReminderWorker
 
         try
         {
-            _messageSender.SendMessage(employee.TelegramChatId.Value,
+            await _messageSender.SendMessageAsync(employee.TelegramChatId.Value,
                 "Напоминание о дедлайне задачи:\n" +
                 $"{task.Title}\n" +
                 $"Срок: {task.Deadline:dd.MM.yyyy}\n" +

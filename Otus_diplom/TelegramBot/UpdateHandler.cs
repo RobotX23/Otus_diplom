@@ -74,7 +74,7 @@ public class UpdateHandler
     /// <summary>
     /// Обрабатывает callback от inline-кнопки Telegram.
     /// </summary>
-    public void HandleCallbackQuery(
+    public async Task HandleCallbackQueryAsync(
         long chatId,
         int messageId,
         string callbackQueryId,
@@ -83,7 +83,7 @@ public class UpdateHandler
     {
         try
         {
-            _messageSender.AnswerCallback(callbackQueryId);
+            await _messageSender.AnswerCallbackAsync(callbackQueryId);
 
             var user = GetCurrentUser(chatId, telegramUsername);
             if (user is null)
@@ -1685,9 +1685,25 @@ public class UpdateHandler
     /// </summary>
     private void Send(long chatId, string text, ReplyMarkup? keyboard = null)
     {
+        _ = SendAsync(chatId, text, keyboard);
+    }
+
+    /// <summary>
+    /// Изменяет сообщение Telegram.
+    /// </summary>
+    private void Edit(long chatId, int messageId, string text, InlineKeyboardMarkup? keyboard = null)
+    {
+        _ = EditAsync(chatId, messageId, text, keyboard);
+    }
+
+    /// <summary>
+    /// Асинхронно отправляет сообщение пользователю.
+    /// </summary>
+    private async Task SendAsync(long chatId, string text, ReplyMarkup? keyboard = null)
+    {
         try
         {
-            _messageSender.SendMessage(chatId, text, keyboard);
+            await _messageSender.SendMessageAsync(chatId, text, keyboard);
         }
         catch (Exception exception)
         {
@@ -1696,13 +1712,13 @@ public class UpdateHandler
     }
 
     /// <summary>
-    /// Изменяет сообщение Telegram.
+    /// Асинхронно изменяет сообщение Telegram.
     /// </summary>
-    private void Edit(long chatId, int messageId, string text, InlineKeyboardMarkup? keyboard = null)
+    private async Task EditAsync(long chatId, int messageId, string text, InlineKeyboardMarkup? keyboard = null)
     {
         try
         {
-            _messageSender.EditMessage(chatId, messageId, text, keyboard);
+            await _messageSender.EditMessageAsync(chatId, messageId, text, keyboard);
         }
         catch (Exception exception)
         {

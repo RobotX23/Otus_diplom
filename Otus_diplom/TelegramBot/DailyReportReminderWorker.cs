@@ -56,20 +56,20 @@ public class DailyReportReminderWorker
     /// <summary>
     /// Проверяет сотрудников и отправляет напоминания тем, кто не отправил отчет.
     /// </summary>
-    private Task CheckReportsAsync(CancellationToken cancellationToken)
+    private async Task CheckReportsAsync(CancellationToken cancellationToken)
     {
         try
         {
             var reminderTimeText = _botSettingsRepository.GetValue(DailyReportReminderTimeKey);
             if (!TimeOnly.TryParseExact(reminderTimeText, "HH:mm", out var reminderTime))
             {
-                return Task.CompletedTask;
+                return;
             }
 
             var now = DateTime.Now;
             if (TimeOnly.FromDateTime(now) < reminderTime)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             var today = DateOnly.FromDateTime(now);
@@ -90,7 +90,7 @@ public class DailyReportReminderWorker
                     continue;
                 }
 
-                SendReminder(employee.TelegramChatId, employee.FullName);
+                await SendReminderAsync(employee.TelegramChatId, employee.FullName);
                 _notifiedEmployeeDates.Add(notificationKey);
             }
         }
@@ -103,13 +103,13 @@ public class DailyReportReminderWorker
             Console.WriteLine($"Ошибка фоновой проверки ежедневных отчетов: {exception}");
         }
 
-        return Task.CompletedTask;
+        await Task.CompletedTask;
     }
 
     /// <summary>
     /// Отправляет напоминание сотруднику.
     /// </summary>
-    private void SendReminder(long? telegramChatId, string employeeName)
+    private async Task SendReminderAsync(long? telegramChatId, string employeeName)
     {
         if (telegramChatId is null)
         {
@@ -119,7 +119,7 @@ public class DailyReportReminderWorker
 
         try
         {
-            _messageSender.SendMessage(telegramChatId.Value,
+            await _messageSender.SendMessageAsync(telegramChatId.Value,
                 "Напоминание об отчете:\n" +
                 "Пожалуйста, отправьте ежедневный отчет за сегодня.");
         }

@@ -21,24 +21,24 @@ public class TelegramApiMessageSender : IMessageSender
     /// <summary>
     /// Отправляет текстовое сообщение в Telegram-чат.
     /// </summary>
-    public void SendMessage(long chatId, string text, ReplyMarkup? keyboard = null)
+    public async Task SendMessageAsync(long chatId, string text, ReplyMarkup? keyboard = null)
     {
-        _botClient.SendMessage(chatId, text, replyMarkup: keyboard).GetAwaiter().GetResult();
+        await _botClient.SendMessage(chatId, text, replyMarkup: keyboard);
     }
 
     /// <summary>
     /// Изменяет ранее отправленное сообщение с inline-кнопками.
     /// </summary>
-    public void EditMessage(long chatId, int messageId, string text, InlineKeyboardMarkup? keyboard = null)
+    public async Task EditMessageAsync(long chatId, int messageId, string text, InlineKeyboardMarkup? keyboard = null)
     {
-        _botClient.EditMessageText(chatId, messageId, text, replyMarkup: keyboard).GetAwaiter().GetResult();
+        await _botClient.EditMessageText(chatId, messageId, text, replyMarkup: keyboard);
     }
 
     /// <summary>
     /// Отвечает на callback от inline-кнопки.
     /// </summary>
-    public void AnswerCallback(string callbackQueryId)
+    public async Task AnswerCallbackAsync(string callbackQueryId)
     {
-        _botClient.AnswerCallbackQuery(callbackQueryId).GetAwaiter().GetResult();
+        await _botClient.AnswerCallbackQuery(callbackQueryId);
     }
 }

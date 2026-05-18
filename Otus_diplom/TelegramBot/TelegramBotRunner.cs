@@ -94,25 +94,25 @@ public class TelegramBotRunner
     /// <summary>
     /// Обрабатывает входящий update Telegram.
     /// </summary>
-    private Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         try
         {
             if (update.Message?.Text is not null)
             {
                 _updateHandler.HandleTextMessage(update.Message.Chat.Id, update.Message.Text, update.Message.From?.Username);
-                return Task.CompletedTask;
+                return;
             }
 
             if (update.CallbackQuery?.Message is not null && update.CallbackQuery.Data is not null)
             {
-                _updateHandler.HandleCallbackQuery(
+                await _updateHandler.HandleCallbackQueryAsync(
                     update.CallbackQuery.Message.Chat.Id,
                     update.CallbackQuery.Message.MessageId,
                     update.CallbackQuery.Id,
                     update.CallbackQuery.Data,
                     update.CallbackQuery.From.Username);
-                return Task.CompletedTask;
+                return;
             }
 
         }
@@ -121,7 +121,7 @@ public class TelegramBotRunner
             Console.WriteLine($"Ошибка обработки Telegram update: {exception}");
         }
 
-        return Task.CompletedTask;
+        await Task.CompletedTask;
     }
 
     /// <summary>

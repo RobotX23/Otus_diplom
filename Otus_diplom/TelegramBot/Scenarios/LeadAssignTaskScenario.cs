@@ -195,31 +195,34 @@ public class LeadAssignTaskScenario : IScenario
         var deadline = DateOnly.Parse(context.Data[DeadlineKey]);
         var task = _taskService.AssignTask(lead, employee, context.Data[TaskTextKey], deadline);
         _contextRepository.Delete(context.ChatId);
-        var notificationSent = true;
-
         if (employee.TelegramChatId.HasValue)
         {
-            try
-            {
-                _messageSender.SendMessage(employee.TelegramChatId.Value,
-                    "Вам назначена новая задача:\n" +
-                    $"{task.Title}\n" +
-                    $"Срок: {task.Deadline:dd.MM.yyyy}\n" +
-                    "Статус: открыто");
-            }
-            catch (Exception exception)
-            {
-                notificationSent = false;
-                Console.WriteLine($"Ошибка отправки уведомления сотруднику о новой задаче: {exception}");
-            }
+            _ = SendTaskNotificationAsync(employee.TelegramChatId.Value, task);
         }
 
         return new ScenarioResult
         {
-            Message = notificationSent
-                ? $"Задача назначена сотруднику {employee.FullName}."
-                : $"Задача назначена сотруднику {employee.FullName}, но уведомление отправить не удалось."
+            Message = $"Задача назначена сотруднику {employee.FullName}."
         };
+    }
+
+    /// <summary>
+    /// Отправляет сотруднику уведомление о новой задаче.
+    /// </summary>
+    private async Task SendTaskNotificationAsync(long telegramChatId, EmployeeTask task)
+    {
+        try
+        {
+            await _messageSender.SendMessageAsync(telegramChatId,
+                "Вам назначена новая задача:\n" +
+                $"{task.Title}\n" +
+                $"Срок: {task.Deadline:dd.MM.yyyy}\n" +
+                "Статус: открыто");
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine($"Ошибка отправки уведомления сотруднику о новой задаче: {exception}");
+        }
     }
 
     /// <summary>
