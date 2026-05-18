@@ -107,6 +107,13 @@ public class UpdateHandler
 
             var scenario = _scenarios.First(item => item.CanHandle(context.ScenarioType));
             var result = scenario.HandleCallback(context, user, callbackData);
+
+            if (result.SendNewMessage)
+            {
+                Send(chatId, result.Message, result.Keyboard);
+                return;
+            }
+
             Edit(chatId, messageId, result.Message, result.Keyboard as InlineKeyboardMarkup);
         }
         catch (DomainException exception)
@@ -455,7 +462,10 @@ public class UpdateHandler
         switch (buttonText)
         {
             case "Назначить задачу" when user.Role == UserRole.Lead:
-                Send(chatId, "Чтобы назначить задачу, отправьте:\n/assign_task Иван Иванов | Подготовить отчет | 20.05.2026");
+                StartLeadAssignTaskScenario(chatId, user);
+                return true;
+            case "Назначить сотрудника" when user.Role == UserRole.Lead:
+                StartLeadAssignTaskScenario(chatId, user);
                 return true;
             case "Отчеты" when user.Role == UserRole.Lead:
                 SendReports(chatId, user);
@@ -542,6 +552,7 @@ public class UpdateHandler
                text.Equals("Не сдали отчет", StringComparison.CurrentCultureIgnoreCase) ||
                text.Equals("Сводка", StringComparison.CurrentCultureIgnoreCase) ||
                text.Equals("Отчет сотрудника", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Назначить сотрудника", StringComparison.CurrentCultureIgnoreCase) ||
                text.Equals("Задачи сотрудника", StringComparison.CurrentCultureIgnoreCase) ||
                text.Equals("Задачи группы", StringComparison.CurrentCultureIgnoreCase);
     }
@@ -1245,6 +1256,21 @@ public class UpdateHandler
         }
 
         var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.LeadEmployeeReport));
+        var result = scenario.Start(chatId, user);
+        Send(chatId, result.Message, result.Keyboard);
+    }
+
+    /// <summary>
+    /// Запускает сценарий назначения задачи сотруднику lead.
+    /// </summary>
+    private void StartLeadAssignTaskScenario(long chatId, User user)
+    {
+        if (!CheckLeadRole(chatId, user))
+        {
+            return;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.LeadAssignTask));
         var result = scenario.Start(chatId, user);
         Send(chatId, result.Message, result.Keyboard);
     }

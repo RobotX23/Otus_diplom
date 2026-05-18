@@ -51,7 +51,8 @@ try
         new MyTasksScenario(taskService, scenarioContextRepository),
         new LastReportScenario(reportService, scenarioContextRepository),
         new LeadEmployeeTasksScenario(taskService, userRepository, scenarioContextRepository),
-        new LeadEmployeeReportScenario(reportService, userRepository, scenarioContextRepository)
+        new LeadEmployeeReportScenario(reportService, userRepository, scenarioContextRepository),
+        new LeadAssignTaskScenario(taskService, userRepository, messageSender, scenarioContextRepository)
     };
 
     var updateHandler = new UpdateHandler(

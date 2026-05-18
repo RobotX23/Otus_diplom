@@ -21,4 +21,9 @@ public class ScenarioResult
     /// Показывает, что сообщение нужно изменить, а не отправлять новое.
     /// </summary>
     public bool EditCurrentMessage { get; set; }
+
+    /// <summary>
+    /// Показывает, что после callback нужно отправить новое сообщение.
+    /// </summary>
+    public bool SendNewMessage { get; set; }
 }

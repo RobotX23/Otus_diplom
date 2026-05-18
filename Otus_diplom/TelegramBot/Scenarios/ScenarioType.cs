@@ -63,5 +63,10 @@ public enum ScenarioType
     /// <summary>
     /// Сценарий просмотра отчета сотрудника lead.
     /// </summary>
-    LeadEmployeeReport
+    LeadEmployeeReport,
+
+    /// <summary>
+    /// Сценарий назначения задачи сотруднику lead.
+    /// </summary>
+    LeadAssignTask
 }
