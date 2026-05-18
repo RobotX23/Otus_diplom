@@ -70,6 +70,11 @@ try
         userRepository,
         botSettingsRepository,
         messageSender);
+    var dailyReportReminderWorker = new DailyReportReminderWorker(
+        reportService,
+        userRepository,
+        botSettingsRepository,
+        messageSender);
     var botRunner = new TelegramBotRunner(botClient, updateHandler);
 
     using var cancellationTokenSource = new CancellationTokenSource();
@@ -80,8 +85,10 @@ try
     };
 
     var taskDeadlineReminderWorkerTask = taskDeadlineReminderWorker.RunAsync(cancellationTokenSource.Token);
+    var dailyReportReminderWorkerTask = dailyReportReminderWorker.RunAsync(cancellationTokenSource.Token);
     await botRunner.RunAsync(cancellationTokenSource.Token);
     await taskDeadlineReminderWorkerTask;
+    await dailyReportReminderWorkerTask;
 }
 catch (Exception exception)
 {
