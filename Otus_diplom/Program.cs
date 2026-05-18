@@ -47,6 +47,7 @@ try
         new DailyReportReminderScenario(botSettingsService, scenarioContextRepository),
         new AddCompletedTaskScenario(reportService, scenarioContextRepository),
         new AddBlockScenario(reportService, scenarioContextRepository),
+        new SendReportScenario(reportService, scenarioContextRepository),
         new MyTasksScenario(taskService, scenarioContextRepository),
         new LastReportScenario(reportService, scenarioContextRepository)
     };

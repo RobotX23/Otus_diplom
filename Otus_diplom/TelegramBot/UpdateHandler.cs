@@ -229,7 +229,7 @@ public class UpdateHandler
             commandText.Equals("Отправить отчет", StringComparison.CurrentCultureIgnoreCase))
         {
             _scenarioContextRepository.Delete(chatId);
-            SendReport(chatId, user);
+            StartSendReportScenario(chatId, user);
             return;
         }
 
@@ -245,7 +245,7 @@ public class UpdateHandler
 
         if (commandText == "/report")
         {
-            SendReport(chatId, user);
+            StartSendReportScenario(chatId, user);
         }
         else if (commandText.StartsWith("/task ", StringComparison.OrdinalIgnoreCase))
         {
@@ -457,7 +457,7 @@ public class UpdateHandler
                 SendTeamTasks(chatId, user);
                 return true;
             case "Отправить отчет" when user.Role == UserRole.Employee:
-                SendReport(chatId, user);
+                StartSendReportScenario(chatId, user);
                 return true;
             case "Добавить задачу в отчет" when user.Role == UserRole.Employee:
                 StartAddCompletedTaskScenario(chatId, user);
@@ -660,20 +660,6 @@ public class UpdateHandler
             ResizeKeyboard = true,
             IsPersistent = true
         };
-    }
-
-    /// <summary>
-    /// Отмечает отчет сотрудника как отправленный.
-    /// </summary>
-    private void SendReport(long chatId, User user)
-    {
-        if (!CheckEmployeeRole(chatId, user))
-        {
-            return;
-        }
-
-        _reportService.SendReport(user);
-        Send(chatId, "Отчет отправлен.");
     }
 
     /// <summary>
@@ -1134,6 +1120,21 @@ public class UpdateHandler
         }
 
         var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.AddBlock));
+        var result = scenario.Start(chatId, employee);
+        Send(chatId, result.Message, result.Keyboard);
+    }
+
+    /// <summary>
+    /// Запускает сценарий подтверждения отправки отчета.
+    /// </summary>
+    private void StartSendReportScenario(long chatId, User employee)
+    {
+        if (!CheckEmployeeRole(chatId, employee))
+        {
+            return;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.SendReport));
         var result = scenario.Start(chatId, employee);
         Send(chatId, result.Message, result.Keyboard);
     }

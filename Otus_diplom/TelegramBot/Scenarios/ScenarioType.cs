@@ -48,5 +48,10 @@ public enum ScenarioType
     /// <summary>
     /// Сценарий добавления проблемы в отчет.
     /// </summary>
-    AddBlock
+    AddBlock,
+
+    /// <summary>
+    /// Сценарий подтверждения отправки отчета.
+    /// </summary>
+    SendReport
 }
