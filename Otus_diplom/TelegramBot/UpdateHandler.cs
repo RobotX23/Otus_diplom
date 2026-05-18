@@ -233,6 +233,14 @@ public class UpdateHandler
             return;
         }
 
+        if (commandText.Equals("Задачи сотрудника", StringComparison.CurrentCultureIgnoreCase) &&
+            user.Role == UserRole.Lead)
+        {
+            _scenarioContextRepository.Delete(chatId);
+            StartLeadEmployeeTasksScenario(chatId, user);
+            return;
+        }
+
         if (HandleActiveScenario(chatId, user, commandText))
         {
             return;
@@ -451,7 +459,7 @@ public class UpdateHandler
                 Send(chatId, "Чтобы посмотреть отчет сотрудника, отправьте:\n/employee_report Иван Иванов");
                 return true;
             case "Задачи сотрудника" when user.Role == UserRole.Lead:
-                Send(chatId, "Чтобы посмотреть задачи сотрудника, отправьте:\n/employee_tasks Иван Иванов");
+                StartLeadEmployeeTasksScenario(chatId, user);
                 return true;
             case "Задачи группы" when user.Role == UserRole.Lead:
                 SendTeamTasks(chatId, user);
@@ -1136,6 +1144,21 @@ public class UpdateHandler
 
         var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.SendReport));
         var result = scenario.Start(chatId, employee);
+        Send(chatId, result.Message, result.Keyboard);
+    }
+
+    /// <summary>
+    /// Запускает сценарий просмотра задач сотрудников lead.
+    /// </summary>
+    private void StartLeadEmployeeTasksScenario(long chatId, User user)
+    {
+        if (!CheckLeadRole(chatId, user))
+        {
+            return;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.LeadEmployeeTasks));
+        var result = scenario.Start(chatId, user);
         Send(chatId, result.Message, result.Keyboard);
     }
 

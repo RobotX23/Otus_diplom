@@ -53,5 +53,10 @@ public enum ScenarioType
     /// <summary>
     /// Сценарий подтверждения отправки отчета.
     /// </summary>
-    SendReport
+    SendReport,
+
+    /// <summary>
+    /// Сценарий просмотра задач сотрудников lead.
+    /// </summary>
+    LeadEmployeeTasks
 }
