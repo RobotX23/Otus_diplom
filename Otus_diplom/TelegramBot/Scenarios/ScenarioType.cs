@@ -33,5 +33,10 @@ public enum ScenarioType
     /// <summary>
     /// Сценарий добавления выполненной задачи в отчет.
     /// </summary>
-    AddCompletedTask
+    AddCompletedTask,
+
+    /// <summary>
+    /// Сценарий просмотра и изменения задач сотрудника.
+    /// </summary>
+    MyTasks
 }

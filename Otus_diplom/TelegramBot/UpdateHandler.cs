@@ -199,6 +199,30 @@ public class UpdateHandler
             return;
         }
 
+        if (commandText.Equals("/my_tasks", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Equals("Мои задачи", StringComparison.CurrentCultureIgnoreCase))
+        {
+            _scenarioContextRepository.Delete(chatId);
+            StartMyTasksScenario(chatId, user);
+            return;
+        }
+
+        if (commandText.Equals("/my_last_report", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Equals("Последний отчет", StringComparison.CurrentCultureIgnoreCase))
+        {
+            _scenarioContextRepository.Delete(chatId);
+            SendMyLastReport(chatId, user);
+            return;
+        }
+
+        if (commandText.Equals("/report", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Equals("Отправить отчет", StringComparison.CurrentCultureIgnoreCase))
+        {
+            _scenarioContextRepository.Delete(chatId);
+            SendReport(chatId, user);
+            return;
+        }
+
         if (HandleActiveScenario(chatId, user, commandText))
         {
             return;
@@ -227,7 +251,7 @@ public class UpdateHandler
         }
         else if (commandText == "/my_tasks")
         {
-            SendEmployeeTasks(chatId, user);
+            StartMyTasksScenario(chatId, user);
         }
         else if (commandText.StartsWith("/start_task ", StringComparison.OrdinalIgnoreCase))
         {
@@ -435,7 +459,7 @@ public class UpdateHandler
                 SendMyLastReport(chatId, user);
                 return true;
             case "Мои задачи" when user.Role == UserRole.Employee:
-                SendEmployeeTasks(chatId, user);
+                StartMyTasksScenario(chatId, user);
                 return true;
             case "Взять задачу в работу" when user.Role == UserRole.Employee:
                 Send(chatId, "Чтобы перевести задачу в работу, отправьте:\n/start_task 1");
@@ -518,12 +542,7 @@ public class UpdateHandler
             },
             new[]
             {
-                new KeyboardButton("Мои задачи"),
-                new KeyboardButton("Взять задачу в работу")
-            },
-            new[]
-            {
-                new KeyboardButton("Закрыть задачу")
+                new KeyboardButton("Мои задачи")
             },
             new[]
             {
@@ -1090,6 +1109,21 @@ public class UpdateHandler
         }
 
         var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.AddCompletedTask));
+        var result = scenario.Start(chatId, employee);
+        Send(chatId, result.Message, result.Keyboard);
+    }
+
+    /// <summary>
+    /// Запускает сценарий просмотра задач сотрудника.
+    /// </summary>
+    private void StartMyTasksScenario(long chatId, User employee)
+    {
+        if (!CheckEmployeeRole(chatId, employee))
+        {
+            return;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.MyTasks));
         var result = scenario.Start(chatId, employee);
         Send(chatId, result.Message, result.Keyboard);
     }

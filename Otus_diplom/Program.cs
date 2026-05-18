@@ -45,7 +45,8 @@ try
         new DeleteEmployeeScenario(userService, scenarioContextRepository),
         new TaskDeadlineReminderScenario(botSettingsService, scenarioContextRepository),
         new DailyReportReminderScenario(botSettingsService, scenarioContextRepository),
-        new AddCompletedTaskScenario(reportService, scenarioContextRepository)
+        new AddCompletedTaskScenario(reportService, scenarioContextRepository),
+        new MyTasksScenario(taskService, scenarioContextRepository)
     };
 
     var updateHandler = new UpdateHandler(
