@@ -116,9 +116,36 @@ public class SqlUserRepository : IUserRepository
     public bool Delete(int id)
     {
         using var db = _dataContextFactory.CreateDataContext();
-        return db.Users
+        using var transaction = db.BeginTransaction();
+
+        var reportIds = db.DailyReports
+            .Where(report => report.EmployeeId == id)
+            .Select(report => report.Id)
+            .ToList();
+
+        db.ReportCompletedTasks
+            .Where(task => reportIds.Contains(task.ReportId))
+            .Delete();
+
+        db.ReportBlocks
+            .Where(block => reportIds.Contains(block.ReportId))
+            .Delete();
+
+        db.DailyReports
+            .Where(report => report.EmployeeId == id)
+            .Delete();
+
+        db.EmployeeTasks
+            .Where(task => task.EmployeeId == id || task.LeadId == id)
+            .Delete();
+
+        var deletedCount = db.Users
             .Where(user => user.Id == id)
-            .Delete() > 0;
+            .Delete();
+
+        transaction.Commit();
+
+        return deletedCount > 0;
     }
 
     /// <summary>

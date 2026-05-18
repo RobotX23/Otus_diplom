@@ -10,7 +10,7 @@ create table if not exists users (
 
 create table if not exists daily_reports (
     id integer generated always as identity primary key,
-    employee_id integer not null references users(id),
+    employee_id integer not null references users(id) on delete cascade,
     report_date date not null,
     is_sent boolean not null default false,
     created_at timestamp not null default current_timestamp,
@@ -31,8 +31,8 @@ create table if not exists report_blocks (
 
 create table if not exists employee_tasks (
     id integer generated always as identity primary key,
-    employee_id integer not null references users(id),
-    lead_id integer not null references users(id),
+    employee_id integer not null references users(id) on delete cascade,
+    lead_id integer not null references users(id) on delete cascade,
     title varchar(500) not null,
     deadline date not null,
     status varchar(50) not null default 'Open',

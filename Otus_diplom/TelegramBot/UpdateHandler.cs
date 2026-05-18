@@ -13,6 +13,8 @@ namespace Otus_diplom.TelegramBot;
 /// </summary>
 public class UpdateHandler
 {
+    private const string EmployeeNoUsernameCallbackPrefix = "employees:no_username:";
+
     private readonly IReportService _reportService;
     private readonly ITaskService _taskService;
     private readonly IUserService _userService;
@@ -87,6 +89,12 @@ public class UpdateHandler
             if (user is null)
             {
                 Edit(chatId, messageId, "Пользователь не найден. Обратитесь к администратору.");
+                return;
+            }
+
+            if (callbackData.StartsWith(EmployeeNoUsernameCallbackPrefix, StringComparison.Ordinal))
+            {
+                Edit(chatId, messageId, "У сотрудника не указан username Telegram.");
                 return;
             }
 
@@ -234,6 +242,13 @@ public class UpdateHandler
         }
 
         if (user.Role == UserRole.Lead && IsLeadMenuButton(commandText))
+        {
+            _scenarioContextRepository.Delete(chatId);
+            HandleKeyboardButton(chatId, user, commandText);
+            return;
+        }
+
+        if (user.Role == UserRole.Administrator && IsAdministratorMenuButton(commandText))
         {
             _scenarioContextRepository.Delete(chatId);
             HandleKeyboardButton(chatId, user, commandText);
@@ -529,6 +544,20 @@ public class UpdateHandler
                text.Equals("Отчет сотрудника", StringComparison.CurrentCultureIgnoreCase) ||
                text.Equals("Задачи сотрудника", StringComparison.CurrentCultureIgnoreCase) ||
                text.Equals("Задачи группы", StringComparison.CurrentCultureIgnoreCase);
+    }
+
+    /// <summary>
+    /// Проверяет, что текст является кнопкой меню администратора.
+    /// </summary>
+    private static bool IsAdministratorMenuButton(string text)
+    {
+        return text.Equals("Добавить сотрудника", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Назначить lead", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Удалить пользователя", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Пользователи", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Настройки", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Настроить дедлайн", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Время отчета", StringComparison.CurrentCultureIgnoreCase);
     }
 
     /// <summary>
@@ -835,13 +864,17 @@ public class UpdateHandler
             return;
         }
 
-        var lines = _userRepository.GetEmployees()
-            .Select(employee => $"{employee.Id}. {employee.FullName}")
+        var employees = _userRepository.GetEmployees()
+            .OrderBy(employee => employee.FullName)
             .ToList();
 
-        Send(chatId, lines.Count == 0
-            ? "Сотрудники не найдены."
-            : "Список сотрудников:\n" + string.Join('\n', lines));
+        if (employees.Count == 0)
+        {
+            Send(chatId, "Сотрудники не найдены.");
+            return;
+        }
+
+        Send(chatId, "Список сотрудников:", CreateEmployeeContactKeyboard(employees));
     }
 
     /// <summary>
@@ -1405,6 +1438,32 @@ public class UpdateHandler
         }
 
         return string.Join('\n', tasks.Select((task, index) => $"{index + 1}. {task.Title}, до {task.Deadline:dd.MM}"));
+    }
+
+    /// <summary>
+    /// Создает inline-кнопки для открытия чата с сотрудником.
+    /// </summary>
+    private static InlineKeyboardMarkup CreateEmployeeContactKeyboard(List<User> employees)
+    {
+        var rows = employees.Select((employee, index) =>
+        {
+            var buttonText = $"{index + 1}. {employee.FullName}";
+            if (string.IsNullOrWhiteSpace(employee.TelegramUsername))
+            {
+                return new[]
+                {
+                    InlineKeyboardButton.WithCallbackData(buttonText, $"{EmployeeNoUsernameCallbackPrefix}{employee.Id}")
+                };
+            }
+
+            var username = employee.TelegramUsername.Trim().TrimStart('@');
+            return new[]
+            {
+                InlineKeyboardButton.WithUrl(buttonText, $"https://t.me/{username}")
+            };
+        });
+
+        return new InlineKeyboardMarkup(rows);
     }
 
     /// <summary>
