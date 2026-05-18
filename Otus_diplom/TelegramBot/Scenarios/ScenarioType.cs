@@ -28,5 +28,10 @@ public enum ScenarioType
     /// <summary>
     /// Сценарий настройки времени напоминания об отчете.
     /// </summary>
-    DailyReportReminder
+    DailyReportReminder,
+
+    /// <summary>
+    /// Сценарий добавления выполненной задачи в отчет.
+    /// </summary>
+    AddCompletedTask
 }

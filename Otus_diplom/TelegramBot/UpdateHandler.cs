@@ -191,6 +191,14 @@ public class UpdateHandler
             return;
         }
 
+        if (commandText.Equals("/task", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Equals("Добавить задачу в отчет", StringComparison.CurrentCultureIgnoreCase))
+        {
+            _scenarioContextRepository.Delete(chatId);
+            StartAddCompletedTaskScenario(chatId, user);
+            return;
+        }
+
         if (HandleActiveScenario(chatId, user, commandText))
         {
             return;
@@ -418,7 +426,7 @@ public class UpdateHandler
                 SendReport(chatId, user);
                 return true;
             case "Добавить задачу в отчет" when user.Role == UserRole.Employee:
-                Send(chatId, "Чтобы добавить выполненную задачу в отчет, отправьте:\n/task Исправил ошибку в форме отчета");
+                StartAddCompletedTaskScenario(chatId, user);
                 return true;
             case "Добавить проблему" when user.Role == UserRole.Employee:
                 Send(chatId, "Чтобы добавить проблему или блокер, отправьте:\n/block Нет доступа к базе данных");
@@ -472,15 +480,23 @@ public class UpdateHandler
     /// </summary>
     private void SendRoleMenu(long chatId, User user)
     {
-        var keyboard = user.Role switch
+        var keyboard = CreateRoleKeyboard(user);
+
+        Send(chatId, $"Здравствуйте, {user.FullName}. Выберите действие:", keyboard);
+    }
+
+    /// <summary>
+    /// Создает клавиатуру по роли пользователя.
+    /// </summary>
+    private static ReplyKeyboardMarkup CreateRoleKeyboard(User user)
+    {
+        return user.Role switch
         {
             UserRole.Employee => CreateEmployeeKeyboard(),
             UserRole.Lead => CreateLeadKeyboard(),
             UserRole.Administrator => CreateAdministratorKeyboard(),
             _ => CreateCommonKeyboard()
         };
-
-        Send(chatId, $"Здравствуйте, {user.FullName}. Выберите действие:", keyboard);
     }
 
     /// <summary>
@@ -986,7 +1002,7 @@ public class UpdateHandler
 
         var scenario = _scenarios.First(item => item.CanHandle(context.ScenarioType));
         var result = scenario.HandleMessage(context, user, text);
-        var keyboard = result.Keyboard ?? CreateAdministratorKeyboard();
+        var keyboard = result.Keyboard ?? CreateRoleKeyboard(user);
         Send(chatId, result.Message, keyboard);
         return true;
     }
@@ -1060,6 +1076,21 @@ public class UpdateHandler
 
         var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.DailyReportReminder));
         var result = scenario.Start(chatId, admin);
+        Send(chatId, result.Message, result.Keyboard);
+    }
+
+    /// <summary>
+    /// Запускает сценарий добавления выполненной задачи в отчет.
+    /// </summary>
+    private void StartAddCompletedTaskScenario(long chatId, User employee)
+    {
+        if (!CheckEmployeeRole(chatId, employee))
+        {
+            return;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.AddCompletedTask));
+        var result = scenario.Start(chatId, employee);
         Send(chatId, result.Message, result.Keyboard);
     }
 
