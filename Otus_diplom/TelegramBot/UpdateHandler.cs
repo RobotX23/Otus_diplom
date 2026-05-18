@@ -1486,9 +1486,9 @@ public class UpdateHandler
     /// </summary>
     private static InlineKeyboardMarkup CreateEmployeeContactKeyboard(List<User> employees)
     {
-        var rows = employees.Select((employee, index) =>
+        var rows = employees.Select(employee =>
         {
-            var buttonText = $"{index + 1}. {employee.FullName}";
+            var buttonText = employee.FullName;
             if (string.IsNullOrWhiteSpace(employee.TelegramUsername))
             {
                 return new[]
