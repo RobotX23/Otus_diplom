@@ -470,7 +470,7 @@ public class UpdateHandler
                 SendSummary(chatId, user);
                 return true;
             case "Отчет сотрудника" when user.Role == UserRole.Lead:
-                Send(chatId, "Чтобы посмотреть отчет сотрудника, отправьте:\n/employee_report Иван Иванов");
+                StartLeadEmployeeReportScenario(chatId, user);
                 return true;
             case "Задачи сотрудника" when user.Role == UserRole.Lead:
                 StartLeadEmployeeTasksScenario(chatId, user);
@@ -1230,6 +1230,21 @@ public class UpdateHandler
         }
 
         var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.LeadEmployeeTasks));
+        var result = scenario.Start(chatId, user);
+        Send(chatId, result.Message, result.Keyboard);
+    }
+
+    /// <summary>
+    /// Запускает сценарий просмотра отчета сотрудника lead.
+    /// </summary>
+    private void StartLeadEmployeeReportScenario(long chatId, User user)
+    {
+        if (!CheckLeadRole(chatId, user))
+        {
+            return;
+        }
+
+        var scenario = _scenarios.First(item => item.CanHandle(ScenarioType.LeadEmployeeReport));
         var result = scenario.Start(chatId, user);
         Send(chatId, result.Message, result.Keyboard);
     }
