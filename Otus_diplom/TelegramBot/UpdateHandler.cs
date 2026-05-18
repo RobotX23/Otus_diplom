@@ -857,7 +857,7 @@ public class UpdateHandler
         var reports = _reportService.GetTodayReports();
         var lines = _userRepository.GetEmployees()
             .Where(employee => reports.All(report => report.EmployeeId != employee.Id || !report.IsSent))
-            .Select(employee => $"{employee.Id}. {employee.FullName}")
+            .Select((employee, index) => $"{index + 1}. {employee.FullName}")
             .ToList();
 
         Send(chatId, lines.Count == 0
@@ -1010,12 +1010,37 @@ public class UpdateHandler
             return;
         }
 
-        var lines = new List<string> { "Задачи всей группы:" };
-        foreach (var employee in _userRepository.GetEmployees())
+        var employees = _userRepository.GetEmployees()
+            .OrderBy(employee => employee.FullName)
+            .ToList();
+
+        if (employees.Count == 0)
         {
-            lines.Add(string.Empty);
-            lines.Add(FormatEmployeeTasks(employee));
+            Send(chatId, "Сотрудники не найдены.");
+            return;
         }
+
+        var lines = new List<string> { "Задачи группы" };
+        var totalOpen = 0;
+        var totalInProgress = 0;
+        var totalClosed = 0;
+
+        foreach (var employee in employees)
+        {
+            var tasks = _taskService.GetEmployeeTasks(employee);
+            totalOpen += tasks.Count(task => task.Status == TaskStatus.Open);
+            totalInProgress += tasks.Count(task => task.Status == TaskStatus.InProgress);
+            totalClosed += tasks.Count(task => task.Status == TaskStatus.Closed);
+
+            lines.Add(string.Empty);
+            lines.Add(FormatTeamEmployeeTasks(employee, tasks));
+        }
+
+        lines.Add(string.Empty);
+        lines.Add("Итого:");
+        lines.Add($"Открыто: {totalOpen}");
+        lines.Add($"В работе: {totalInProgress}");
+        lines.Add($"Закрыто: {totalClosed}");
 
         Send(chatId, string.Join('\n', lines));
     }
@@ -1335,6 +1360,51 @@ public class UpdateHandler
         }
 
         return string.Join('\n', lines).TrimEnd();
+    }
+
+    /// <summary>
+    /// Формирует короткий блок задач сотрудника для общей сводки lead.
+    /// </summary>
+    private static string FormatTeamEmployeeTasks(User employee, List<EmployeeTask> tasks)
+    {
+        var openTasks = tasks
+            .Where(task => task.Status == TaskStatus.Open)
+            .OrderBy(task => task.Deadline)
+            .ThenBy(task => task.Id)
+            .ToList();
+
+        var inProgressTasks = tasks
+            .Where(task => task.Status == TaskStatus.InProgress)
+            .OrderBy(task => task.Deadline)
+            .ThenBy(task => task.Id)
+            .ToList();
+
+        var closedCount = tasks.Count(task => task.Status == TaskStatus.Closed);
+
+        var lines = new List<string>
+        {
+            $"👤 {employee.FullName}",
+            "Открыто:",
+            FormatShortTaskList(openTasks),
+            "В работе:",
+            FormatShortTaskList(inProgressTasks),
+            $"Закрыто: {closedCount}"
+        };
+
+        return string.Join('\n', lines);
+    }
+
+    /// <summary>
+    /// Формирует короткий список активных задач.
+    /// </summary>
+    private static string FormatShortTaskList(List<EmployeeTask> tasks)
+    {
+        if (tasks.Count == 0)
+        {
+            return "нет";
+        }
+
+        return string.Join('\n', tasks.Select((task, index) => $"{index + 1}. {task.Title}, до {task.Deadline:dd.MM}"));
     }
 
     /// <summary>
