@@ -19,7 +19,6 @@ public class LeadEmployeeTasksScenario : IScenario
     private const string TaskCallbackPrefix = "admin_tasks:task:";
     private const string BackToEmployeesCallback = "admin_tasks:back:employees";
     private const string BackToTasksCallback = "admin_tasks:back:tasks";
-    private const string CloseCallback = "admin_tasks:close";
 
     private readonly ITaskService _taskService;
     private readonly IUserRepository _userRepository;
@@ -79,16 +78,6 @@ public class LeadEmployeeTasksScenario : IScenario
     /// </summary>
     public ScenarioResult HandleCallback(ScenarioContext context, User user, string callbackData)
     {
-        if (callbackData == CloseCallback)
-        {
-            _contextRepository.Delete(context.ChatId);
-            return new ScenarioResult
-            {
-                Message = "Просмотр задач сотрудников закрыт.",
-                EditCurrentMessage = true
-            };
-        }
-
         if (callbackData == BackToEmployeesCallback)
         {
             context.Step = SelectEmployeeStep;
@@ -226,7 +215,6 @@ public class LeadEmployeeTasksScenario : IScenario
             return new ScenarioResult
             {
                 Message = "Сотрудники не найдены.",
-                Keyboard = CreateCloseKeyboard(),
                 EditCurrentMessage = editCurrentMessage
             };
         }
@@ -251,7 +239,6 @@ public class LeadEmployeeTasksScenario : IScenario
             })
             .ToList();
 
-        rows.Add(new[] { InlineKeyboardButton.WithCallbackData("Назад", CloseCallback) });
         return new InlineKeyboardMarkup(rows);
     }
 
@@ -290,17 +277,6 @@ public class LeadEmployeeTasksScenario : IScenario
         return new InlineKeyboardMarkup(new[]
         {
             new[] { InlineKeyboardButton.WithCallbackData("Назад", BackToTasksCallback) }
-        });
-    }
-
-    /// <summary>
-    /// Создает клавиатуру закрытия сценария.
-    /// </summary>
-    private static InlineKeyboardMarkup CreateCloseKeyboard()
-    {
-        return new InlineKeyboardMarkup(new[]
-        {
-            new[] { InlineKeyboardButton.WithCallbackData("Назад", CloseCallback) }
         });
     }
 

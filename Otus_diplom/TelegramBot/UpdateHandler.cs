@@ -233,11 +233,10 @@ public class UpdateHandler
             return;
         }
 
-        if (commandText.Equals("Задачи сотрудника", StringComparison.CurrentCultureIgnoreCase) &&
-            user.Role == UserRole.Lead)
+        if (user.Role == UserRole.Lead && IsLeadMenuButton(commandText))
         {
             _scenarioContextRepository.Delete(chatId);
-            StartLeadEmployeeTasksScenario(chatId, user);
+            HandleKeyboardButton(chatId, user, commandText);
             return;
         }
 
@@ -515,6 +514,21 @@ public class UpdateHandler
             default:
                 return false;
         }
+    }
+
+    /// <summary>
+    /// Проверяет, что текст является кнопкой меню lead.
+    /// </summary>
+    private static bool IsLeadMenuButton(string text)
+    {
+        return text.Equals("Назначить задачу", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Отчеты", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Сотрудники", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Не сдали отчет", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Сводка", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Отчет сотрудника", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Задачи сотрудника", StringComparison.CurrentCultureIgnoreCase) ||
+               text.Equals("Задачи группы", StringComparison.CurrentCultureIgnoreCase);
     }
 
     /// <summary>
