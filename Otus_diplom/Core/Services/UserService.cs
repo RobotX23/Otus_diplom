@@ -5,7 +5,7 @@ using Otus_diplom.Core.Exceptions;
 namespace Otus_diplom.Core.Services;
 
 /// <summary>
-/// Содержит бизнес-логику работы с пользователями.
+/// Работа с пользователями.
 /// </summary>
 public class UserService : IUserService
 {

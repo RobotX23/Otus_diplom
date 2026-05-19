@@ -31,9 +31,4 @@ public interface ITaskRepository
     /// Ищет задачу сотрудника по номеру.
     /// </summary>
     EmployeeTask? GetByEmployeeAndId(int employeeId, int taskId);
-
-    /// <summary>
-    /// Возвращает следующий номер задачи.
-    /// </summary>
-    int GetNextId();
 }

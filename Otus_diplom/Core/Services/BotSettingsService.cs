@@ -5,7 +5,7 @@ using Otus_diplom.Core.Exceptions;
 namespace Otus_diplom.Core.Services;
 
 /// <summary>
-/// Содержит бизнес-логику настройки параметров бота.
+/// Настройки параметров бота.
 /// </summary>
 public class BotSettingsService : IBotSettingsService
 {

@@ -765,31 +765,6 @@ public class UpdateHandler
     }
 
     /// <summary>
-    /// Показывает сотруднику его сегодняшний отчет.
-    /// </summary>
-    private void SendMyLastReport(long chatId, User user)
-    {
-        if (!CheckEmployeeRole(chatId, user))
-        {
-            return;
-        }
-
-        var report = _reportService.GetTodayReport(user);
-        if (report is null)
-        {
-            Send(chatId, "За сегодня отчет еще не создан.");
-            return;
-        }
-
-        Send(chatId,
-            "Ваш последний отчет:\n" +
-            $"Дата: {report.Date:dd.MM.yyyy}\n" +
-            $"Отправлен: {(report.IsSent ? "да" : "нет")}\n" +
-            $"Выполнено: {FormatList(report.CompletedTasks)}\n" +
-            $"Проблемы: {FormatList(report.Blocks)}");
-    }
-
-    /// <summary>
     /// Переводит задачу сотрудника в работу.
     /// </summary>
     private void StartTask(long chatId, User user, string taskIdText)
@@ -1012,19 +987,6 @@ public class UpdateHandler
     }
 
     /// <summary>
-    /// Показывает сотруднику его задачи.
-    /// </summary>
-    private void SendEmployeeTasks(long chatId, User employee)
-    {
-        if (!CheckEmployeeRole(chatId, employee))
-        {
-            return;
-        }
-
-        Send(chatId, FormatEmployeeTasks(employee));
-    }
-
-    /// <summary>
     /// Показывает lead задачи конкретного сотрудника.
     /// </summary>
     private void SendEmployeeTasksByName(long chatId, User user, string employeeName)
@@ -1091,12 +1053,6 @@ public class UpdateHandler
 
     /// <summary>
     /// Добавляет сотрудника через команду администратора.
-    /// </summary>
-    /// <summary>
-    /// Запускает сценарий добавления нового сотрудника администратором.
-    /// </summary>
-    /// <summary>
-    /// Передает сообщение в активный сценарий пользователя.
     /// </summary>
     private bool HandleActiveScenario(long chatId, User user, string text)
     {
@@ -1551,9 +1507,6 @@ public class UpdateHandler
 
     /// <summary>
     /// Ищет сотрудника по номеру, полному имени или части имени.
-    /// </summary>
-    /// <summary>
-    /// Ищет текущего пользователя по chat id или username Telegram.
     /// </summary>
     private User? GetCurrentUser(long chatId, string? telegramUsername)
     {

@@ -73,14 +73,6 @@ public class SqlReportRepository : IReportRepository
     }
 
     /// <summary>
-    /// Возвращает следующий номер отчета. Для SQL используется identity, поэтому значение заранее не требуется.
-    /// </summary>
-    public int GetNextId()
-    {
-        return 0;
-    }
-
-    /// <summary>
     /// Загружает отчет вместе с выполненными задачами и проблемами.
     /// </summary>
     private static DailyReport LoadReport(AppDataContext db, SqlDailyReportModel model)

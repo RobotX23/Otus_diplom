@@ -80,12 +80,4 @@ public class SqlTaskRepository : ITaskRepository
         var model = db.EmployeeTasks.FirstOrDefault(task => task.EmployeeId == employeeId && task.Id == taskId);
         return model is null ? null : ModelMapper.ToEntity(model);
     }
-
-    /// <summary>
-    /// Возвращает следующий номер задачи. Для SQL используется identity, поэтому значение заранее не требуется.
-    /// </summary>
-    public int GetNextId()
-    {
-        return 0;
-    }
 }

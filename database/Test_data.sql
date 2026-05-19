@@ -52,16 +52,16 @@ where employee.full_name = 'Иван Иванов'
   );
 
 insert into employee_tasks (employee_id, lead_id, title, deadline, status)
-select employee.id, lead_user.id, 'Проверить форму отправки отчета', current_date + interval '1 day', 'InProgress'
+select employee.id, lead_user.id, 'Доложить о готовности', current_date + interval '1 day', 'InProgress'
 from users employee
 cross join users lead_user
 where employee.full_name = 'Петр Петров'
-  and lead_user.full_name = 'Анна Lead'
+  and lead_user.full_name = 'Анна Анечка'
   and not exists (
       select 1
       from employee_tasks
       where employee_tasks.employee_id = employee.id
-        and employee_tasks.title = 'Проверить форму отправки отчета'
+        and employee_tasks.title = 'Доложить о готовности'
   );
 
 insert into bot_settings (setting_key, setting_value)

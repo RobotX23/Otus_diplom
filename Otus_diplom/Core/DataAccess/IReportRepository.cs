@@ -26,9 +26,4 @@ public interface IReportRepository
     /// Сохраняет изменения отчета.
     /// </summary>
     void Save(DailyReport report);
-
-    /// <summary>
-    /// Возвращает следующий номер отчета.
-    /// </summary>
-    int GetNextId();
 }

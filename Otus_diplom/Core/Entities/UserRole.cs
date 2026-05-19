@@ -1,7 +1,7 @@
 namespace Otus_diplom.Core.Entities;
 
 /// <summary>
-/// Роль пользователя в учебном боте.
+/// Роль пользователя.
 /// </summary>
 public enum UserRole
 {

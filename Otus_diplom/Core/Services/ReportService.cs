@@ -122,7 +122,6 @@ public class ReportService : IReportService
 
         report = new DailyReport
         {
-            Id = _reportRepository.GetNextId(),
             EmployeeId = employee.Id,
             Date = today
         };

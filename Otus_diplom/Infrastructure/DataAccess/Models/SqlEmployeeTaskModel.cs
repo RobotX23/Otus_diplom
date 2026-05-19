@@ -3,7 +3,7 @@ using LinqToDB.Mapping;
 namespace Otus_diplom.Infrastructure.DataAccess.Models;
 
 /// <summary>
-/// Модель задачи сотрудника для будущей таблицы базы данных.
+/// Модель задачи сотрудника.
 /// </summary>
 [Table(Name = "employee_tasks")]
 public class SqlEmployeeTaskModel

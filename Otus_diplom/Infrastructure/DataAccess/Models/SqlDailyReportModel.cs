@@ -3,7 +3,7 @@ using LinqToDB.Mapping;
 namespace Otus_diplom.Infrastructure.DataAccess.Models;
 
 /// <summary>
-/// Модель ежедневного отчета для будущей таблицы базы данных.
+/// Модель ежедневного отчета.
 /// </summary>
 [Table(Name = "daily_reports")]
 public class SqlDailyReportModel

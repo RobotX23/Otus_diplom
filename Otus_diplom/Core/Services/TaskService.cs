@@ -31,7 +31,6 @@ public class TaskService : ITaskService
 
         var task = new EmployeeTask
         {
-            Id = _taskRepository.GetNextId(),
             EmployeeId = employee.Id,
             LeadId = lead.Id,
             Title = title.Trim(),

@@ -3,7 +3,7 @@ using LinqToDB.Mapping;
 namespace Otus_diplom.Infrastructure.DataAccess.Models;
 
 /// <summary>
-/// Модель пользователя для будущей таблицы базы данных.
+/// Модель пользователя.
 /// </summary>
 [Table(Name = "users")]
 public class SqlUserModel
