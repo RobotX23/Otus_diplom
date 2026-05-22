@@ -1,4 +1,4 @@
-namespace Otus_diplom.TelegramBot;
+namespace Otus_diplom.TelegramBot.Messaging;
 
 using Telegram.Bot.Types.ReplyMarkups;
 

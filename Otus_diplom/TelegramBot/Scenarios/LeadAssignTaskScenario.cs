@@ -1,6 +1,7 @@
 using Otus_diplom.Core.DataAccess;
 using Otus_diplom.Core.Entities;
 using Otus_diplom.Core.Services;
+using Otus_diplom.TelegramBot.Messaging;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Otus_diplom.TelegramBot.Scenarios;

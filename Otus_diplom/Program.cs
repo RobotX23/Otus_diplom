@@ -1,8 +1,11 @@
 using Otus_diplom.Core.DataAccess;
 using Otus_diplom.Core.Services;
 using Otus_diplom.Infrastructure.DataAccess;
+using Otus_diplom.Infrastructure.DataAccess.Repositories;
 using Otus_diplom.TelegramBot;
+using Otus_diplom.TelegramBot.Messaging;
 using Otus_diplom.TelegramBot.Scenarios;
+using Otus_diplom.TelegramBot.Workers;
 using Telegram.Bot;
 
 try

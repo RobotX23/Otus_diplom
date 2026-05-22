@@ -1,7 +1,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace Otus_diplom.TelegramBot;
+namespace Otus_diplom.TelegramBot.Messaging;
 
 /// <summary>
 /// Отправка сообщений через Telegram.Bot.

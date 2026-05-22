@@ -1,8 +1,9 @@
 using LinqToDB;
 using Otus_diplom.Core.DataAccess;
+using Otus_diplom.Infrastructure.DataAccess;
 using Otus_diplom.Infrastructure.DataAccess.Models;
 
-namespace Otus_diplom.Infrastructure.DataAccess;
+namespace Otus_diplom.Infrastructure.DataAccess.Repositories;
 
 /// <summary>
 /// SQL-репозиторий настроек бота.

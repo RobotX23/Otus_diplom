@@ -1,9 +1,10 @@
 using Otus_diplom.Core.DataAccess;
 using Otus_diplom.Core.Entities;
 using Otus_diplom.Core.Services;
+using Otus_diplom.TelegramBot.Messaging;
 using TaskStatus = Otus_diplom.Core.Entities.TaskStatus;
 
-namespace Otus_diplom.TelegramBot;
+namespace Otus_diplom.TelegramBot.Workers;
 
 /// <summary>
 /// Фоновая отправка уведомлений сотрудникам о приближении дедлайна задач.

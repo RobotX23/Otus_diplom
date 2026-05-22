@@ -2,7 +2,7 @@ using Otus_diplom.Core.DataAccess;
 using Otus_diplom.Core.Entities;
 using LinqToDB;
 
-namespace Otus_diplom.Infrastructure.DataAccess;
+namespace Otus_diplom.Infrastructure.DataAccess.Repositories;
 
 /// <summary>
 /// SQL-репозиторий пользователей.
